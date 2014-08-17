@@ -10,6 +10,16 @@ This error reporting infrastructure is intended to be used with go-multi-logger 
 
 ```
 
+// cryptobject stores RSA/AES encrypted objects
+
+type CryptObject {...}
+
+// keystore stores private keys RSA/ECDSA
+
+type KeyStore struct {...}
+
+// helper functions:
+
 tools.Encode_base64(...)
 tools.Decode_base64(...)
 tools.Encode_hex(...)
@@ -27,12 +37,20 @@ tools.SHA_3(...)
 tools.SHA_1(...)
 tools.SHA(...)
 
+tools.Generate_ecdsa(...)
+
 tools.Generate_rsa(...)
 tools.Recover_rsa(...)
 tools.Encrypt_rsa(...)
 tools.Decrypt_rsa(...)
 
 tools.Crypt_aes(...)
+tools.Crypt_aes_cbc(...)
+
+tools.Socket_open(...)
+
+tools.File_open(...)
+tools.URL_get(...)
 
 tools.Time_now(...)
 tools.Quit_slow(...)

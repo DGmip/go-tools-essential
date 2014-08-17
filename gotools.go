@@ -80,6 +80,32 @@ func Time_now(thelength int) string {
 	return(t.Format("20060102150405"))
 }
 
+// ECDSA keygen
+
+func Generate_ecdsa(derr chan string, key_length int, secret_key string) (bool, *KeyStore) {	
+	private_key, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
+	if err != nil {
+		derr<-"TOOLS/KEYGEN/ECDSA: "+err.Error()
+		return false, nil
+	}
+	keystore := &KeyStore{}
+	keystore.ID = "ECDSA"
+	keystore.decodedprivatekey = private_key
+	keystore.decodedpublickey = &private_key.PublicKey
+	ok, encoded_key := Encode_gob(derr, private_key)
+	if ok {
+		keystore.EncryptedPrivateKey = Encode_base64(Crypt_aes(derr, true, secret_key, encoded_key))
+		okk, encoded_public_key := Encode_gob(derr, keystore.decodedpublickey)
+		if okk {
+			keystore.EncodedPublicKey = Encode_base64(encoded_public_key)
+			keystore.PublicKeyHash = SHA_256(keystore.EncodedPublicKey)
+			return true, keystore
+		}
+	}
+	derr<-"TOOLS/KEYGEN/ECDSA: FAILED"
+	return false, nil
+}
+
 // RSA keygen
 
 func Recover_rsa(derr chan string, keystore *KeyStore, secret_key string) (bool, *rsa.PrivateKey) {

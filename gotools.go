@@ -82,6 +82,19 @@ func Time_now(thelength int) string {
 
 // RSA keygen
 
+func Recover_rsa(derr chan string, keystore *KeyStore, secret_key string) (bool, *rsa.PrivateKey) {
+	ok, crypt_bytes := Decode_base64(derr, keystore.EncryptedPrivateKey)
+	if !ok {
+		derr<-"TOOLS/RECOVER/RSA: ENCODED KEY FAILED BASE64"
+		return false, nil
+	}
+	plain_key := &rsa.PrivateKey{}
+	okk := Decode_gob(derr, Crypt_aes(derr, false, secret_key, crypt_bytes), plain_key)
+	if okk { return true, plain_key }
+	derr<-"TOOLS/RECOVER/RSA: FAILED"
+	return false, nil
+}
+
 func Generate_rsa(derr chan string, key_length int, secret_key string) (bool, *KeyStore) {	
 	private_key, err := rsa.GenerateKey(rand.Reader, key_length)
 	if err != nil {

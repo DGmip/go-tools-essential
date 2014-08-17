@@ -22,6 +22,7 @@ import (
 		"crypto/rand"
 		"code.google.com/p/go.crypto/sha3"
 		"github.com/dchest/scrypt"
+		"code.google.com/p/go.net/websocket"
 		)
 
 type CryptObject struct {
@@ -403,10 +404,30 @@ func URL_get(derr chan string, url string) (bool, string) {
 	return true, string(body)
 }
 
+func Valid_hash(l int, x string) bool {
+	if len(x) == l {
+		_, err := hex.DecodeString(x)
+		if err == nil { return true }
+	}	
+	return false
+}
+
 func Quit_slow(derr chan string, msg string) {
 	derr<-"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 	derr<-"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 	derr<-msg
 	time.Sleep(2 * time.Second)
 	os.Exit(1)
+}
+
+func Socket_open(derr chan string, protocol, route, port, ssl_certpath, ssl_keypath string, handlerfunc func(*websocket.Conn)) {
+	derr<-"TOOLS/SOCKET/OPEN: "+protocol+" "+route+" "+port
+	http.Handle("/"+route, websocket.Handler(handlerfunc))
+	if protocol == "https://" {
+		err := http.ListenAndServeTLS(port, ssl_certpath, ssl_keypath, nil)
+		if err != nil { derr<-"TOOLS/SOCKET/OPEN: "+err.Error() }
+	} else {
+		err := http.ListenAndServe(port, nil)
+		if err != nil { derr<-"TOOLS/SOCKET/OPEN: "+err.Error() }
+	}
 }

@@ -3,11 +3,15 @@ package tools
 import (
 		"os"
 		"io"
+		"io/ioutil"
 		"time"
 		"bytes"
+		"net/http"
 		"crypto/rsa"
 		"crypto/aes"
 		"crypto/cipher"
+		"crypto/elliptic"
+		"crypto/ecdsa"
 		"encoding/gob"
 		"encoding/json"
 		"encoding/base64"
@@ -37,6 +41,16 @@ type KeyStore struct {
 }
 
 var entropychannel chan chan string
+
+func ID_weak() string {
+	id, _ := SHA(1, 0, Entropy64(), nil)
+	return id
+}
+
+func ID_strong() string {
+	id, _ := SHA(2, 64, Entropy64(), nil)
+	return id
+}
 
 func Entropy64() string {
 	if entropychannel == nil {
@@ -189,6 +203,26 @@ func Decrypt_rsa(derr chan string, private_key *rsa.PrivateKey, c *CryptObject, 
 }
 
 
+// AES CBC MODE (compatible with cryptoJS)
+
+func Crypt_aes_cbc(derr chan string, encrypt bool, password string, text []byte, iv []byte) (bool, string) {
+	_, key := SHA(3, 32, password, nil)
+	c, err := aes.NewCipher(key)
+	if err != nil {
+		derr<-"TOOLS/AES/CBC "+err.Error()
+		return false, "!"
+	}
+	newbuffer := make([]byte, len(text))
+	if encrypt {
+		encrypter := cipher.NewCBCEncrypter(c, iv)
+		encrypter.CryptBlocks(newbuffer, text)
+		return true, Encode_base64(newbuffer)
+	}
+	decrypter := cipher.NewCBCDecrypter(c, iv)
+	decrypter.CryptBlocks(text, newbuffer)
+	return true, string(newbuffer)
+}
+
 // AES encrypt/decrypt
 		
 func Crypt_aes(derr chan string, encrypt bool, password string, text []byte) []byte {
@@ -196,7 +230,7 @@ func Crypt_aes(derr chan string, encrypt bool, password string, text []byte) []b
 	_, key := SHA(3, 32, password, nil)
 	block, err := aes.NewCipher(key)   
 	if err != nil {
-		derr<-"CANT GET NEW CIPHER"
+		derr<-"TOOLS/AES "+err.Error()
 		return([]byte("!"))
 	}
 	if encrypt {
@@ -344,6 +378,30 @@ func Decode_gob(derr chan string, input []byte, data interface{}) bool {
 }
 
 // MISC
+
+func File_open(derr chan string, path string) (bool, []byte) {
+	b, err := ioutil.ReadFile(path)
+	if err != nil {
+		derr<-err.Error()
+		return false, nil
+	}
+	return true, b
+}
+
+func URL_get(derr chan string, url string) (bool, string) {
+	resp, err := http.Get(url)
+	if err != nil || resp == nil {
+		derr<-"TOOLS/URL/GET: "+err.Error()
+		return false, "!"
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil || body == nil {
+		derr<-"TOOLS/URL/GET: "+err.Error()
+		return false, "!"
+	}
+	return true, string(body)
+}
 
 func Quit_slow(derr chan string, msg string) {
 	derr<-"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"

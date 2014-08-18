@@ -97,7 +97,7 @@ func Time_now(thelength int) string {
 
 // ECDSA keygen
 
-func Generate_ecdsa(derr chan string, key_length int, secret_key string) (bool, *KeyStore) {	
+func Generate_ecdsa(derr chan string, secret_key string) (bool, *KeyStore) {	
 	private_key, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
 	if err != nil {
 		derr<-"TOOLS/KEYGEN/ECDSA: "+err.Error()
@@ -260,11 +260,14 @@ func Crypt_aes(derr chan string, encrypt bool, password string, text []byte) []b
 			
 /// HASHING
 
-func Scrypt(derr chan string, px string) []byte {
-	_, h := SHA(3, 32, px, nil)
-	b, err := scrypt.Key([]byte(px), h, 16384, 8, 1, 64)
-	if err != nil { derr<-"TOOLS/SCRYPT "+err.Error() }
-	return b
+func Scrypt(derr chan string, input string) (bool, []byte) {
+	_, h := SHA(3, 32, input, nil)
+	b, err := scrypt.Key([]byte(input), h, 16384, 8, 1, 64)
+	if err != nil {
+		derr<-"TOOLS/SCRYPT: "+err.Error()
+		return false, nil
+	}
+	return true, b
 }
 
 func SHA_1(input string) string {

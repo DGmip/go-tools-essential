@@ -3,6 +3,7 @@ package tools
 import (
 		"os"
 		"io"
+		"os/exec"
 		"io/ioutil"
 		"time"
 		"bytes"
@@ -470,3 +471,55 @@ func Socket_open(derr chan string, protocol, route, port, ssl_certpath, ssl_keyp
 		if err != nil { derr<-"TOOLS/SOCKET/OPEN: "+err.Error() }
 	}
 }
+
+func String_array_stringify(parts []string) string {
+	output := ""
+	for x := range parts { if len(parts[x]) > 0 { output += parts[x]+" " } }
+	return output
+}
+
+func Application_run(derr chan string, error_filepath string, commands []string) (chan bool, chan string) {
+	derr<-"TOOLS/APP/RUN: "+String_array_stringify(commands)
+	success_channel := make(chan bool, 2)
+	return_channel := make(chan string, 2)
+	go func(bool_channel chan bool, output_channel chan string) {
+		for {
+			error_file, err := os.Create(error_filepath)
+			if err != nil { derr<-"TOOLS/APP/RUN: "+err.Error(); break }
+			defer error_file.Close()
+			cmd := exec.Command("./go")
+			cmd.Stderr = error_file
+			switch (len(commands)) {
+				case 1: cmd = exec.Command(commands[0])
+				case 2: cmd = exec.Command(commands[0], commands[1])
+				case 3: cmd = exec.Command(commands[0], commands[1], commands[2])
+				case 4: cmd = exec.Command(commands[0], commands[1], commands[2], commands[3])
+				case 5: cmd = exec.Command(commands[0], commands[1], commands[2], commands[3], commands[4])
+				default:	derr<-"TOOLS/APP/RUN: WRONG NUMBER OF COMMANDS"; break
+			}
+			start_err := cmd.Start()
+			if start_err != nil { derr<-"TOOLS/APP/RUN: "+start_err.Error(); break }
+			bool_channel <- true
+			cmd.Wait()
+			logfile := "!"
+			logfile_bytes, err := ioutil.ReadFile(error_filepath)
+			if err == nil {
+				logfile = string(logfile_bytes)
+				if len(logfile) > 600 { logfile = logfile[0:599] }
+			}
+			output_channel <- logfile
+		}
+		bool_channel <- false
+	}(success_channel, return_channel)
+	return success_channel, return_channel
+}
+
+
+
+
+
+
+
+
+
+

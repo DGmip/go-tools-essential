@@ -136,14 +136,16 @@ func Generate_ecdsa(derr chan string, secret_key string) (bool, *KeyStore) {
 	keystore.decodedprivatekey = private_key
 	keystore.decodedpublickey = &private_key.PublicKey
 	ok, encoded_key := Encode_gob(derr, private_key)
-	if ok {
-		keystore.EncryptedPrivateKey = Encode_base64(Crypt_aes(derr, true, secret_key, encoded_key))
-		okk, encoded_public_key := Encode_gob(derr, keystore.decodedpublickey)
-		if okk {
-			keystore.EncodedPublicKey = Encode_base64(encoded_public_key)
-			keystore.PublicKeyHash = SHA_256(keystore.EncodedPublicKey)
-			return true, keystore
-		}
+	for {
+		if !ok { break }
+		crypt_ok, ciphertext := Crypt_aes(derr, true, secret_key, encoded_key)
+		if !crypt_ok { break }
+		keystore.EncryptedPrivateKey = Encode_base64(ciphertext)
+		enc_ok, encoded_public_key := Encode_gob(derr, keystore.decodedpublickey)
+		if !enc_ok { break }
+		keystore.EncodedPublicKey = Encode_base64(encoded_public_key)
+		keystore.PublicKeyHash = SHA_256(keystore.EncodedPublicKey)
+		return true, keystore
 	}
 	derr<-"TOOLS/KEYGEN/ECDSA: FAILED"
 	return false, nil
@@ -153,13 +155,15 @@ func Generate_ecdsa(derr chan string, secret_key string) (bool, *KeyStore) {
 
 func Recover_rsa(derr chan string, keystore *KeyStore, secret_key string) (bool, *rsa.PrivateKey) {
 	ok, crypt_bytes := Decode_base64(derr, keystore.EncryptedPrivateKey)
-	if !ok {
-		derr<-"TOOLS/RECOVER/RSA: ENCODED KEY FAILED BASE64"
-		return false, nil
+	for {
+		if !ok { break }
+		crypt_ok, plaintext := Crypt_aes(derr, false, secret_key, crypt_bytes)
+		if !crypt_ok { break }
+		plain_key := &rsa.PrivateKey{}
+		dec_ok := Decode_gob(derr, plaintext, plain_key)
+		if !dec_ok { break }
+		return true, plain_key
 	}
-	plain_key := &rsa.PrivateKey{}
-	okk := Decode_gob(derr, Crypt_aes(derr, false, secret_key, crypt_bytes), plain_key)
-	if okk { return true, plain_key }
 	derr<-"TOOLS/RECOVER/RSA: FAILED"
 	return false, nil
 }
@@ -171,18 +175,20 @@ func Generate_rsa(derr chan string, key_length int, secret_key string) (bool, *K
 		return false, nil
 	}
 	keystore := &KeyStore{}
-	keystore.ID = "RSA"
+	keystore.ID = "ECDSA"
 	keystore.decodedprivatekey = private_key
 	keystore.decodedpublickey = &private_key.PublicKey
 	ok, encoded_key := Encode_gob(derr, private_key)
-	if ok {
-		keystore.EncryptedPrivateKey = Encode_base64(Crypt_aes(derr, true, secret_key, encoded_key))
-		okk, encoded_public_key := Encode_gob(derr, keystore.decodedpublickey)
-		if okk {
-			keystore.EncodedPublicKey = Encode_base64(encoded_public_key)
-			keystore.PublicKeyHash = SHA_256(keystore.EncodedPublicKey)
-			return true, keystore
-		}
+	for {
+		if !ok { break }
+		crypt_ok, ciphertext := Crypt_aes(derr, true, secret_key, encoded_key)
+		if !crypt_ok { break }
+		keystore.EncryptedPrivateKey = Encode_base64(ciphertext)
+		enc_ok, encoded_public_key := Encode_gob(derr, keystore.decodedpublickey)
+		if !enc_ok { break }
+		keystore.EncodedPublicKey = Encode_base64(encoded_public_key)
+		keystore.PublicKeyHash = SHA_256(keystore.EncodedPublicKey)
+		return true, keystore
 	}
 	derr<-"TOOLS/KEYGEN/RSA: FAILED"
 	return false, nil
@@ -191,18 +197,21 @@ func Generate_rsa(derr chan string, key_length int, secret_key string) (bool, *K
 // RSA encrypt / decrypt bytes
 		
 func Encrypt_rsa(derr chan string, public_key *rsa.PublicKey, data interface{}) *CryptObject {
-	aes_key := Entropy64()
-	cipher_bytes, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, public_key, []byte(aes_key), []byte(""))
-	if err != nil {
-		derr<-"TOOLS/RSA/ENCRYPT: "+err.Error()
-		return(nil)
-	}
-	cryptobject := &CryptObject{}
-	cryptobject.Time = Time_now(0)
-	cryptobject.Protected = Encode_base64(cipher_bytes)
-	ok, encoded_object := Encode_gob(derr, data)
-	if ok {
-		cryptobject.Crypt = Encode_base64(Crypt_aes(derr, true, aes_key, encoded_object))
+	for {
+		aes_key := Entropy64()
+		cipher_bytes, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, public_key, []byte(aes_key), []byte(""))
+		if err != nil {
+			derr<-err.Error()
+			break
+		}
+		cryptobject := &CryptObject{}
+		cryptobject.Time = Time_now(0)
+		cryptobject.Protected = Encode_base64(cipher_bytes)
+		enc_ok, encoded_object := Encode_gob(derr, data)
+		if !enc_ok { break }
+		crypt_ok, ciphertext_bytes := Crypt_aes(derr, true, aes_key, encoded_object)
+		if !crypt_ok { break }
+		cryptobject.Crypt = Encode_base64(ciphertext_bytes)
 		return cryptobject
 	}
 	derr<-"TOOLS/RSA/ENCRYPT: FAILED"
@@ -211,23 +220,22 @@ func Encrypt_rsa(derr chan string, public_key *rsa.PublicKey, data interface{}) 
 
 func Decrypt_rsa(derr chan string, private_key *rsa.PrivateKey, c *CryptObject, dest *interface{}) bool {
 	ok, cipher_bytes := Decode_base64(derr, c.Protected)
-	if !ok {
-		derr<-"TOOLS/RSA/DECRYPT: CRYPTOBJECT KEY FAILS BASE64"
-		return false
+	for {
+		if !ok { break }
+		plainkey, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, private_key, cipher_bytes, []byte(""))
+		if err != nil {
+			derr<-err.Error()
+			break 
+		}
+		dec_ok, crypt_bytes := Decode_base64(derr, c.Crypt)
+		if !dec_ok { break }
+		crypt_ok, plaintext_bytes := Crypt_aes(derr, false, string(plainkey), crypt_bytes)
+		if !crypt_ok { break }
+		gob_ok := Decode_gob(derr, plaintext_bytes, dest)
+		if !gob_ok { break }
+		return true
 	}
-	plainkey, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, private_key, cipher_bytes, []byte(""))
-	if err != nil {
-		derr<-"TOOLS/RSA/DECRYPT: THIS CRYPTOBJECT FAILS RSA"
-		return false
-	}
-	okc, crypt_bytes := Decode_base64(derr, c.Crypt)
-	if !okc {
-		derr<-"TOOLS/RSA/DECRYPT: CRYPTOBJECT BODY FAILS BASE64"
-		return false
-	}
-	ok = Decode_gob(derr, Crypt_aes(derr, false, string(plainkey), crypt_bytes), dest)
-	if ok { return true }
-	derr<-"TOOLS/RSA/DECRYPT: THIS CRYPTOBJECT FAILS AES"
+	derr<-"TOOLS/RSA/DECRYPT: FAILED"
 	return false
 }
 
@@ -254,20 +262,20 @@ func Crypt_aes_cbc(derr chan string, encrypt bool, password string, text []byte,
 
 // AES encrypt/decrypt
 		
-func Crypt_aes(derr chan string, encrypt bool, password string, text []byte) []byte {
+func Crypt_aes(derr chan string, encrypt bool, password string, text []byte) (bool, []byte) {
 	output := []byte{}
 	_, key := SHA(3, 32, password, nil)
 	block, err := aes.NewCipher(key)   
 	if err != nil {
 		derr<-"TOOLS/AES "+err.Error()
-		return([]byte("!"))
+		return false, nil
 	}
 	if encrypt {
 		ciphertext := make([]byte, aes.BlockSize+len(string(text)))
 		iv := ciphertext[:aes.BlockSize]
 		if _, err := io.ReadFull(rand.Reader, iv); err != nil {	
 			derr<-"IO READER FAIL"
-			return([]byte("!"))
+			return false, nil
 		}
 		cfb := cipher.NewCFBEncrypter(block, iv)
 		cfb.XORKeyStream(ciphertext[aes.BlockSize:], text)
@@ -275,7 +283,7 @@ func Crypt_aes(derr chan string, encrypt bool, password string, text []byte) []b
 	} else {
 		if len(string(text)) < aes.BlockSize {
 			derr<-"CIPHERTEXT IS TOO SHORT"
-			return([]byte("!"))
+			return false, nil
 		}
 		iv := text[:aes.BlockSize]
 		text = text[aes.BlockSize:]
@@ -283,7 +291,7 @@ func Crypt_aes(derr chan string, encrypt bool, password string, text []byte) []b
 		cfb.XORKeyStream(text, text)
 		output = text
 	}
-	return output
+	return true, output
 }
 			
 /// HASHING

@@ -95,6 +95,34 @@ func Time_now(thelength int) string {
 	return(t.Format("20060102150405"))
 }
 
+// ECDSA
+
+func Sign_gethash(derr chan string, object interface{}) (bool, []byte) {
+	for {
+		ok, encoded_object_bytes := Encode_gob(derr, object)
+		if !ok { break }
+		_, object_hash := SHA(3, 128, "", encoded_object_bytes)
+		return true, object_hash
+	}
+	derr<-"TOOLS/SIGN/GETHASH: FAILED"
+	return false, nil
+}
+
+func Sign_ecdsa(derr chan string, private_key *ecdsa.PrivateKey, object interface{}) (bool, []string) {
+	ok, object_hash := Sign_gethash(derr, object)
+	for {
+		if !ok { break }
+		a, b, err := ecdsa.Sign(rand.Reader, private_key, object_hash)
+		if err != nil {
+			derr<-err.Error()
+			break
+		}
+		return true, []string{a.String(), b.String()}
+	}
+	derr<-"TOOLS/SIGN/ECDSA: FAILED"
+	return false, nil
+}
+
 // ECDSA keygen
 
 func Generate_ecdsa(derr chan string, secret_key string) (bool, *KeyStore) {	

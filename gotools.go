@@ -289,8 +289,14 @@ func Crypt_aes(derr chan string, encrypt bool, password string, text []byte) (bo
 			
 /// HASHING
 
-func Digest_object(derr chan string, object interface{}) (bool, string) {
+func Digest_object_gob(derr chan string, object interface{}) (bool, string) {
 	ok, encoded := Encode_gob(derr, object)
+	if !ok { return false, "" }; digest, _ := SHA(3, 128, "", encoded)
+	return true, digest
+}
+
+func Digest_object_json(derr chan string, object interface{}) (bool, string) {
+	ok, encoded := Encode_json(derr, object)
 	if !ok { return false, "" }; digest, _ := SHA(3, 128, "", encoded)
 	return true, digest
 }

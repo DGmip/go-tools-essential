@@ -316,7 +316,7 @@ func SHA_512(input string) string { h, _ := SHA(2, 128, input, nil); return h }
 
 func SHA_3_256(input string) string { h, _ := SHA(3, 64, input, nil); return h }
 
-func SHA_3_512(input string) string { h, _ := SHA(3, 64, input, nil); return h }
+func SHA_3_512(input string) string { h, _ := SHA(3, 128, input, nil); return h }
 
 func SHA(i, l int, s string, b []byte) (string, []byte) {
 	hash := sha1.New()

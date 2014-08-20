@@ -6,6 +6,7 @@ import (
 		"os/exec"
 		"io/ioutil"
 		"time"
+		"strings"
 		"bytes"
 		"net/http"
 		"crypto/rsa"
@@ -420,13 +421,35 @@ func Decode_gob(derr chan string, input []byte, data interface{}) bool {
 
 // MISC
 
+
+func File_write(derr chan string, file_path, payload string) bool {
+	f, err := os.Create(file_path)
+	if err == nil {	defer f.Close(); f.Write([]byte(payload)); return true }
+	derr<-"TOOLS/FILE/WRITE: "+err.Error(); return false
+}
+
 func File_open(derr chan string, path string) (bool, []byte) {
 	b, err := ioutil.ReadFile(path)
-	if err != nil {
-		derr<-err.Error()
-		return false, nil
-	}
+	if err != nil { derr<-err.Error(); return false, nil }
 	return true, b
+}
+
+func File_makepath(derr chan string, path string) bool {
+	if len(path) == 0 { derr<-"TOOLS/FILE/MAKEPATH: PATH NOT SUPPLIED"; return false }
+	parts := strings.Split(path, "/")
+	prog := ""
+	for p := range parts {
+		if len(parts[p]) < 1 { derr<-"TOOLS/FILE/MAKEPATH: PATH INVALID"; return false }
+		prog += parts[p]+"/"
+		_, err := os.Open(prog)
+		if err != nil {
+			e := os.Mkdir(prog, 0700)
+			if e != nil { derr<-"TOOLS/FILE/MAKEPATH: FAILED TO MAKE PATH"; return false }
+			continue
+		}
+		derr<-"TOOLS/FILE/MAKEPATH: OS.OPEN FAILED"; return false
+	}
+	return true
 }
 
 func URL_get(derr chan string, url string) (bool, string) {
@@ -513,13 +536,4 @@ func Application_run(derr chan string, error_filepath string, commands []string)
 	}(success_channel, return_channel)
 	return success_channel, return_channel
 }
-
-
-
-
-
-
-
-
-
 

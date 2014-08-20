@@ -422,6 +422,14 @@ func Decode_gob(derr chan string, input []byte, data interface{}) bool {
 
 // MISC
 
+func File_dir_list(derr chan string, path string) (bool, []string) {
+	files, dir_err := ioutil.ReadDir(path)
+	if dir_err != nil {	derr<-"TOOLS/DIR/LIST: "+dir_err.Error(); return false, nil }
+	newlist := []string{}
+	for _, f := range files { newlist = append(newlist, f.Name()) }
+	return true, newlist
+}
+
 func File_write_string(derr chan string, file_path, payload string) bool {
 	f, err := os.Create(file_path)
 	if err == nil {	defer f.Close(); f.Write([]byte(payload)); return true }

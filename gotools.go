@@ -418,7 +418,7 @@ func File_makepath(derr chan string, path string) bool {
 	parts := strings.Split(path, "/")
 	prog := ""
 	for p := range parts {
-		if len(parts[p]) < 1 { derr<-"TOOLS/FILE/MAKEPATH: PATH INVALID"; return false }
+		if len(parts[p]) < 1 { continue }
 		prog += parts[p]+"/"
 		_, open_err := os.Open(prog); if open_err != nil { derr<-"TOOLS/FILE/MAKEPATH: "+open_err.Error(); return false }
 		os.Mkdir(prog, 0700);

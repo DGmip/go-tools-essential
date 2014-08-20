@@ -421,11 +421,16 @@ func Decode_gob(derr chan string, input []byte, data interface{}) bool {
 
 // MISC
 
-
-func File_write(derr chan string, file_path, payload string) bool {
+func File_write_string(derr chan string, file_path, payload string) bool {
 	f, err := os.Create(file_path)
 	if err == nil {	defer f.Close(); f.Write([]byte(payload)); return true }
-	derr<-"TOOLS/FILE/WRITE: "+err.Error(); return false
+	derr<-"TOOLS/FILE/WRITE/STRING: "+err.Error(); return false
+}
+
+func File_write_bytes(derr chan string, file_path string, payload []byte) bool {
+	f, err := os.Create(file_path)
+	if err == nil {	defer f.Close(); f.Write(payload); return true }
+	derr<-"TOOLS/FILE/WRITE/BYTES: "+err.Error(); return false
 }
 
 func File_open(derr chan string, path string) (bool, []byte) {

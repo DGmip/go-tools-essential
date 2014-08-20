@@ -242,7 +242,6 @@ func Decrypt_rsa(derr chan string, private_key *rsa.PrivateKey, c *CryptObject, 
 	return false
 }
 
-
 // AES CBC MODE (compatible with cryptoJS)
 
 func Crypt_aes_cbc(derr chan string, encrypt bool, password string, text []byte, iv []byte) (bool, string) {
@@ -269,25 +268,16 @@ func Crypt_aes(derr chan string, encrypt bool, password string, text []byte) (bo
 	output := []byte{}
 	_, key := SHA(3, 32, password, nil)
 	block, err := aes.NewCipher(key)   
-	if err != nil {
-		derr<-"TOOLS/AES "+err.Error()
-		return false, nil
-	}
+	if err != nil { derr<-"TOOLS/AES "+err.Error(); return false, nil }
 	if encrypt {
 		ciphertext := make([]byte, aes.BlockSize+len(string(text)))
 		iv := ciphertext[:aes.BlockSize]
-		if _, err := io.ReadFull(rand.Reader, iv); err != nil {	
-			derr<-"IO READER FAIL"
-			return false, nil
-		}
+		if _, err := io.ReadFull(rand.Reader, iv); err != nil { derr<-"IO READER FAIL"; return false, nil }
 		cfb := cipher.NewCFBEncrypter(block, iv)
 		cfb.XORKeyStream(ciphertext[aes.BlockSize:], text)
 		output = ciphertext
 	} else {
-		if len(string(text)) < aes.BlockSize {
-			derr<-"CIPHERTEXT IS TOO SHORT"
-			return false, nil
-		}
+		if len(string(text)) < aes.BlockSize { derr<-"CIPHERTEXT IS TOO SHORT"; return false, nil }
 		iv := text[:aes.BlockSize]
 		text = text[aes.BlockSize:]
 		cfb := cipher.NewCFBDecrypter(block, iv)
@@ -302,32 +292,17 @@ func Crypt_aes(derr chan string, encrypt bool, password string, text []byte) (bo
 func Scrypt(derr chan string, input string) (bool, []byte) {
 	_, h := SHA(3, 32, input, nil)
 	b, err := scrypt.Key([]byte(input), h, 16384, 8, 1, 64)
-	if err != nil {
-		derr<-"TOOLS/SCRYPT: "+err.Error()
-		return false, nil
-	}
+	if err != nil { derr<-"TOOLS/SCRYPT: "+err.Error(); return false, nil }
 	return true, b
 }
 
-func SHA_1(input string) string {
-	h, _ := SHA(1, 0, input, nil)
-	return h
-}
+func SHA_1(input string) string { h, _ := SHA(1, 0, input, nil); return h }
 
-func SHA_256(input string) string {
-	h, _ := SHA(2, 64, input, nil)
-	return h
-}
+func SHA_256(input string) string { h, _ := SHA(2, 64, input, nil); return h }
 
-func SHA_512(input string) string {
-	h, _ := SHA(2, 128, input, nil)
-	return h
-}
+func SHA_512(input string) string { h, _ := SHA(2, 128, input, nil); return h }
 
-func SHA_3(input string) string {
-	h, _ := SHA(3, 64, input, nil)
-	return h
-}
+func SHA_3(input string) string { h, _ := SHA(3, 64, input, nil); return h }
 
 func SHA(i, l int, s string, b []byte) (string, []byte) {
 	hash := sha1.New()
@@ -350,59 +325,40 @@ func SHA(i, l int, s string, b []byte) (string, []byte) {
 
 func Encode_json(derr chan string, i interface{}) (bool, []byte) {
 	b, e := json.Marshal(i)
-	if e != nil {
-		derr<-"TOOLS/JSON/ENCODE: "+e.Error()
-		return false, nil
-	}
+	if e != nil { derr<-"TOOLS/JSON/ENCODE: "+e.Error(); return false, nil }
 	return true, b
 }
 
 func Decode_json(derr chan string, b []byte, i interface{}) bool {
 	e := json.Unmarshal(b, i)
-	if e != nil {
-		derr<-"TOOLS/JSON/DECODE: "+e.Error()
-		return false
-	}
+	if e != nil { derr<-"TOOLS/JSON/DECODE: "+e.Error(); return false }
 	return true
 }
 
 // BASE64 encoding
 		
-func Encode_base64(b []byte) string {
-	return base64.StdEncoding.EncodeToString(b)
-}
+func Encode_base64(b []byte) string { return base64.StdEncoding.EncodeToString(b) }
 
 func Decode_base64(derr chan string, s string) (bool, []byte) {
 	data, e := base64.StdEncoding.DecodeString(s)
-    if e != nil { 
-		derr<-"TOOLS/BASE64/DECODE: "+e.Error()
-		return false, nil
-	}
+    if e != nil { derr<-"TOOLS/BASE64/DECODE: "+e.Error(); return false, nil }
     return true, data
 }		
 
 // HEX encoding
 
-func Encode_hex(b []byte) string {
-	return hex.EncodeToString(b)
-}
+func Encode_hex(b []byte) string { return hex.EncodeToString(b) }
 
 func Decode_hex(derr chan string, s string) (bool, []byte) {
 	b, e := hex.DecodeString(s)
-	if e != nil {
-		derr<-"TOOLS/HEX/DECODE: "+e.Error()
-		return false, nil
-	}
+	if e != nil { derr<-"TOOLS/HEX/DECODE: "+e.Error(); return false, nil }
 	return true, b
 }
 
 // GOB marshalling		
 		
 func Encode_gob(derr chan string, input interface{}) (bool, []byte) {
-	if input == nil {
-		derr<-"TOOLS/GOB/ENCODE: INPUT INTERFACE IS NIL"
-		return false, nil
-	}
+	if input == nil { derr<-"TOOLS/GOB/ENCODE: INPUT INTERFACE IS NIL"; return false, nil }
 	encoded := new(bytes.Buffer)
 	encCache := gob.NewEncoder(encoded)
 	encCache.Encode(input)
@@ -413,10 +369,7 @@ func Decode_gob(derr chan string, input []byte, data interface{}) bool {
 	dCache := bytes.NewBuffer(input)
 	decCache := gob.NewDecoder(dCache)
 	e := decCache.Decode(data)
-	if e != nil || data == nil {
-		derr<-"TOOLS/GOB/DECODE: "+e.Error()
-		return false
-	}
+	if e != nil || data == nil { derr<-"TOOLS/GOB/DECODE: "+e.Error(); return false }
 	return true
 }
 
@@ -442,10 +395,16 @@ func File_write_bytes(derr chan string, file_path string, payload []byte) bool {
 	derr<-"TOOLS/FILE/WRITE/BYTES: "+err.Error(); return false
 }
 
-func File_open(derr chan string, path string) (bool, []byte) {
-	b, err := ioutil.ReadFile(path)
+func File_read_bytes(derr chan string, path string) (bool, []byte) {
+	file_bytes, err := ioutil.ReadFile(path)
 	if err != nil { derr<-err.Error(); return false, nil }
-	return true, b
+	return true, file_bytes
+}
+
+func File_read_string(derr chan string, path string) (bool, string) {
+	file_bytes, err := ioutil.ReadFile(path)
+	if err != nil { derr<-err.Error(); return false, "" }
+	return true, string(file_bytes)
 }
 
 func File_makepath(derr chan string, path string) bool {

@@ -8,6 +8,7 @@ import (
 		"time"
 		"strings"
 		"bytes"
+		"net/url"
 		"net/http"
 		"crypto/rsa"
 		"crypto/aes"
@@ -455,6 +456,20 @@ func File_makepath(derr chan string, path string) bool {
 		derr<-"TOOLS/FILE/MAKEPATH: OS.OPEN FAILED"; return false
 	}
 	return true
+}
+
+func URL_post(derr chan string, target_url string, values_map map[string]string) (bool, string) {
+	client := &http.Client{}
+	values := make(url.Values)
+	for k, v := range values_map { values.Set(k, v) }
+	request, _ := http.NewRequest("POST", target_url, strings.NewReader(values.Encode()))
+	request.Header.Set("content-type", "application/x-www-form-urlencoded")
+	response, do_err := client.Do(request)
+	if do_err != nil { derr<-"TOOLS/URL/POST: "+do_err.Error(); return false, "" }
+	defer response.Body.Close()
+	server_response, err := ioutil.ReadAll(response.Body)
+	if err != nil { derr<-"TOOLS/URL/POST: "+do_err.Error(); return false, "" }
+	return true, string(server_response)
 }
 
 func URL_get(derr chan string, url string) (bool, string) {

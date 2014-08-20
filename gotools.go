@@ -289,6 +289,12 @@ func Crypt_aes(derr chan string, encrypt bool, password string, text []byte) (bo
 			
 /// HASHING
 
+func Digest_object(derr chan string, object interface{}) (bool, string) {
+	ok, encoded := Encode_gob(derr, object)
+	if !ok { return false, "" }; digest, _ := SHA(3, 128, "", encoded)
+	return true, digest
+}
+
 func Scrypt(derr chan string, input string) (bool, []byte) {
 	_, h := SHA(3, 32, input, nil)
 	b, err := scrypt.Key([]byte(input), h, 16384, 8, 1, 64)

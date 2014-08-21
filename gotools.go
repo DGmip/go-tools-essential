@@ -281,9 +281,9 @@ func Digest_object_json(derr chan string, object interface{}) (bool, string) {
 	return true, digest
 }
 
-func Scrypt_128(derr chan string, input string) (bool, []byte) { return Scrypt_custom(derr, input, 32) }
-func Scrypt_256(derr chan string, input string) (bool, []byte) { return Scrypt_custom(derr, input, 64) }
-func Scrypt_512(derr chan string, input string) (bool, []byte) { return Scrypt_custom(derr, input, 128) }
+func Scrypt_128(derr chan string, input string) (bool, []byte) { return Scrypt(derr, input, 32) }
+func Scrypt_256(derr chan string, input string) (bool, []byte) { return Scrypt(derr, input, 64) }
+func Scrypt_512(derr chan string, input string) (bool, []byte) { return Scrypt(derr, input, 128) }
 
 func Scrypt(derr chan string, input string, hash_length int) (bool, []byte) {
 	_, h := SHA(3, 32, input, nil)

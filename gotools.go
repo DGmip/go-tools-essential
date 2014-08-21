@@ -290,7 +290,7 @@ func Scrypt_128(derr chan string, input string) (bool, []byte) { return Scrypt_c
 func Scrypt_256(derr chan string, input string) (bool, []byte) { return Scrypt_custom(derr, input, 64) }
 func Scrypt_512(derr chan string, input string) (bool, []byte) { return Scrypt_custom(derr, input, 128) }
 
-func Scrypt_custom(derr chan string, input string, hash_length int) (bool, []byte) {
+func Scrypt(derr chan string, input string, hash_length int) (bool, []byte) {
 	_, h := SHA(3, 32, input, nil)
 	if hash_length == 0 { derr<-"HASH LENGTH NEEDS TO BE BIGGER THAN ZERO"; return false, nil }
 	b, err := scrypt.Key([]byte(input), h, 16384, 8, 1, hash_length)
@@ -299,13 +299,9 @@ func Scrypt_custom(derr chan string, input string, hash_length int) (bool, []byt
 }
 
 func SHA_1(input string) string { h, _ := SHA(1, 0, input, nil); return h }
-
 func SHA_256(input string) string { h, _ := SHA(2, 64, input, nil); return h }
-
 func SHA_512(input string) string { h, _ := SHA(2, 128, input, nil); return h }
-
 func SHA_3_256(input string) string { h, _ := SHA(3, 64, input, nil); return h }
-
 func SHA_3_512(input string) string { h, _ := SHA(3, 128, input, nil); return h }
 
 func SHA(i, l int, s string, b []byte) (string, []byte) {

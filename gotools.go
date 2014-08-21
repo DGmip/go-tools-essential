@@ -207,7 +207,7 @@ func Encrypt_rsa(derr chan string, public_key *rsa.PublicKey, data interface{}) 
 	return false, nil
 }
 
-func Decrypt_rsa(derr chan string, private_key *rsa.PrivateKey, c *CryptObject, dest *interface{}) bool {
+func Decrypt_rsa(derr chan string, private_key *rsa.PrivateKey, c *CryptObject, dest interface{}) bool {
 	ok, cipher_bytes := Decode_base64(derr, c.Protected)
 	for {
 		if !ok { break }

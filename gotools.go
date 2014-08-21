@@ -46,21 +46,12 @@ type KeyStore struct {
 
 var entropychannel chan chan string
 
-func ID_weak() string {
-	id, _ := SHA(1, 0, Entropy64(), nil)
-	return id
-}
+func ID_weak() string {	id, _ := SHA(1, 0, Entropy64(), nil); return id }
 
-func ID_strong() string {
-	id, _ := SHA(2, 64, Entropy64(), nil)
-	return id
-}
+func ID_strong() string { id, _ := SHA(2, 64, Entropy64(), nil); return id }
 
 func Entropy64() string {
-	if entropychannel == nil {
-		entropychannel = make(chan chan string, 9)
-		go entropy_generator()
-	}
+	if entropychannel == nil { entropychannel = make(chan chan string, 9); go entropy_generator() }
 	return entropy()[0:64]
 }
 func entropy() string {
@@ -87,14 +78,8 @@ func entropy_generator() {
 
 func Time_now(thelength int) string {
 	t := time.Now()
-	if thelength < 0 {
-		const layout = "Jan 2, 2006 at 3:04pm (GMT)"
-		return(t.Format(layout))
-	}
-	if thelength > 0 {
-		req := t.Format("20060102150405")
-		return(req[0:thelength])
-	}
+	if thelength < 0 { const layout = "Jan 2, 2006 at 3:04pm (GMT)"; return(t.Format(layout)) }
+	if thelength > 0 { req := t.Format("20060102150405"); return(req[0:thelength]) }
 	return(t.Format("20060102150405"))
 }
 
@@ -301,9 +286,14 @@ func Digest_object_json(derr chan string, object interface{}) (bool, string) {
 	return true, digest
 }
 
-func Scrypt(derr chan string, input string) (bool, []byte) {
+func Scrypt_128(derr chan string, input string) (bool, []byte) { return Scrypt_custom(derr, input, 32) }
+func Scrypt_256(derr chan string, input string) (bool, []byte) { return Scrypt_custom(derr, input, 64) }
+func Scrypt_512(derr chan string, input string) (bool, []byte) { return Scrypt_custom(derr, input, 128) }
+
+func Scrypt_custom(derr chan string, input string, hash_length int) (bool, []byte) {
 	_, h := SHA(3, 32, input, nil)
-	b, err := scrypt.Key([]byte(input), h, 16384, 8, 1, 64)
+	if hash_length == 0 { derr<-"HASH LENGTH NEEDS TO BE BIGGER THAN ZERO"; return false, nil }
+	b, err := scrypt.Key([]byte(input), h, 16384, 8, 1, hash_length)
 	if err != nil { derr<-"TOOLS/SCRYPT: "+err.Error(); return false, nil }
 	return true, b
 }

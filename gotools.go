@@ -533,3 +533,15 @@ func Application_run(derr chan string, error_filepath string, commands []string)
 	return success_channel, return_channel
 }
 
+func CharSet_select(set_type string) string {
+	switch(set_type) {
+		case "base58": return "AaBbCcDdEeFfGgHhiJjKkLMmNnoPpQqRrSsTtUuVvWwXxYyZz987654321"
+		case "int": return "0987654321"
+		case "float": return "-0.987654321"
+		case "alpha_lower": return "abcdefghijklmnopqrstuvwxyz"
+		case "alpha_upper": return "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+		case "alpha": return CharSet_select("alpha_lower") + CharSet_select("alpha_upper")
+		case "beta": return CharSet_select("alpha")+":/&=$£*#!?',;() _@"+CharSet_select("float")
+	}
+	return "!"
+}

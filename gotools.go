@@ -1,7 +1,6 @@
 package tools
 
 import (
-		"github.com/golangdaddy/go-brainfile"
 		"os"
 		"io"
 		"os/exec"
@@ -227,14 +226,6 @@ func Decrypt_rsa(derr chan string, private_key *rsa.PrivateKey, c *CryptObject, 
 	}
 	derr<-"TOOLS/RSA/DECRYPT: FAILED"
 	return false
-}
-
-// BRAINFILE 
-
-func Crypt_brainfile(derr chan string, public_key *rsa.PublicKey, object interface{}) (bool, *CryptObject) {
-	ok, new_pointer := brainfile.New(derr, object); if !ok { return false, nil }
-	ok, new_object := Encrypt_rsa(derr, public_key, new_pointer); if !ok { return false, nil }
-	return true, new_object
 }
 
 // AES CBC MODE (compatible with cryptoJS)

@@ -520,7 +520,7 @@ func Application_run(derr chan string, error_filepath string, commands []string)
 			if start_err != nil { derr<-"TOOLS/APP/RUN: "+start_err.Error(); break }
 			bool_channel <- true
 			cmd.Wait()
-			logfile := "!"
+			logfile := "ERROR OPENING LOGFILE "+error_filepath
 			logfile_bytes, err := ioutil.ReadFile(error_filepath)
 			if err == nil {
 				logfile = string(logfile_bytes)

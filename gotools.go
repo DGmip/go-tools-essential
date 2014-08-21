@@ -183,7 +183,13 @@ func Generate_rsa(derr chan string, key_length int, secret_key string) (bool, *K
 }
 	
 // RSA encrypt / decrypt bytes
-		
+
+func Encrypt_rsa_encoded(derr chan string, public_key_encoded string, data interface{}) (bool, *CryptObject) {
+	ok, key_bytes := Decode_base64(derr, public_key_encoded)
+	if ok { new_key := &rsa.PublicKey{}; if Decode_gob(derr, key_bytes, new_key) { return Encrypt_rsa(derr, new_key, data) } }
+	return false, nil
+}
+
 func Encrypt_rsa(derr chan string, public_key *rsa.PublicKey, data interface{}) (bool, *CryptObject) {
 	for {
 		aes_key := Entropy64()

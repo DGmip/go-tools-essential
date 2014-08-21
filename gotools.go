@@ -184,26 +184,21 @@ func Generate_rsa(derr chan string, key_length int, secret_key string) (bool, *K
 	
 // RSA encrypt / decrypt bytes
 		
-func Encrypt_rsa(derr chan string, public_key *rsa.PublicKey, data interface{}) *CryptObject {
+func Encrypt_rsa(derr chan string, public_key *rsa.PublicKey, data interface{}) (bool, *CryptObject) {
 	for {
 		aes_key := Entropy64()
 		cipher_bytes, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, public_key, []byte(aes_key), []byte(""))
-		if err != nil {
-			derr<-err.Error()
-			break
-		}
+		if err != nil { derr<-err.Error(); break }
 		cryptobject := &CryptObject{}
 		cryptobject.Time = Time_now(0)
 		cryptobject.Protected = Encode_base64(cipher_bytes)
-		enc_ok, encoded_object := Encode_gob(derr, data)
-		if !enc_ok { break }
-		crypt_ok, ciphertext_bytes := Crypt_aes(derr, true, aes_key, encoded_object)
-		if !crypt_ok { break }
+		enc_ok, encoded_object := Encode_gob(derr, data); if !enc_ok { break }
+		crypt_ok, ciphertext_bytes := Crypt_aes(derr, true, aes_key, encoded_object); if !crypt_ok { break }
 		cryptobject.Crypt = Encode_base64(ciphertext_bytes)
-		return cryptobject
+		return true, cryptobject
 	}
 	derr<-"TOOLS/RSA/ENCRYPT: FAILED"
-	return nil
+	return false, nil
 }
 
 func Decrypt_rsa(derr chan string, private_key *rsa.PrivateKey, c *CryptObject, dest *interface{}) bool {

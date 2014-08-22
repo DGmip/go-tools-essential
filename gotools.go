@@ -23,6 +23,7 @@ import (
 		"crypto/sha256"
 		"crypto/sha512"
 		"crypto/rand"
+		"github.com/kennygrant/sanitize"
 		"code.google.com/p/go.crypto/sha3"
 		"github.com/dchest/scrypt"
 		"code.google.com/p/go.net/websocket"
@@ -547,3 +548,18 @@ func CharSet_select(set_type string) string {
 	}
 	return "!"
 }
+
+func Parse_sanitize(input string) string { return strings.ToLower(sanitize.HTML(input)) }
+
+func Parse_safe(derr chan string, in string) (bool, string) {
+	derrp := "TOOLS/PARSE/SAFE: "
+	input := in
+	in = strings.ToLower(sanitize.HTML(in))
+	if len(in) < 40 && len(in) > 0 {
+		in = strings.Replace(in, " ", "", -1)
+		for ch := range in { if !strings.Contains(CharSet_select("alpha_lower"), string(in[ch])) { derr<-derrp+"UNSAFE INPUT CHARACTERS"; return false, "" } }
+		if in == input { return true, input }
+	}
+	derr<-derrp+"ABORTED EVIL INPUT ("+in+")"; return false, ""
+}
+

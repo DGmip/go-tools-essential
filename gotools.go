@@ -113,6 +113,21 @@ func Sign_ecdsa(derr chan string, private_key *ecdsa.PrivateKey, object interfac
 
 // ECDSA keygen
 
+func Recover_ecdsa(derr chan string, keystore *KeyStore, secret_key string) (bool, *ecdsa.PrivateKey) {
+	ok, crypt_bytes := Decode_base64(derr, keystore.EncryptedPrivateKey)
+	for {
+		if !ok { break }
+		crypt_ok, plaintext := Crypt_aes(derr, false, secret_key, crypt_bytes)
+		if !crypt_ok { break }
+		plain_key := &ecdsa.PrivateKey{}
+		dec_ok := Decode_gob(derr, plaintext, plain_key)
+		if !dec_ok { break }
+		return true, plain_key
+	}
+	derr<-"TOOLS/RECOVER/ECDSA: FAILED"
+	return false, nil
+}
+
 func Generate_ecdsa(derr chan string, secret_key string) (bool, *KeyStore) {	
 	private_key, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
 	if err != nil {

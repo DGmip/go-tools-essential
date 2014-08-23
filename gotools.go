@@ -46,6 +46,20 @@ type KeyStore struct {
 	decodedprivatekey interface{}
 }
 
+type EasyTime struct {
+	Zone, Day_Name, Month_Name string
+	Year, Month, Day int
+	Hour, Minute, Second int
+}
+
+func Time_easy() *EasyTime {
+	t := time.Now()
+	zone, _ := t.Zone()
+	day_name := t.Weekday()
+	month_name := t.Month()
+	return &EasyTime{zone, day_name.String(), month_name.String(), t.Year(), int(t.Month()), t.Day(), t.Hour(), t.Minute(), t.Second()}	
+}
+
 var entropychannel chan chan string
 
 func ID_weak() string {	id, _ := SHA(1, 0, Entropy64(), nil); return id }

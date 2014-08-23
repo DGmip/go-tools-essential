@@ -152,7 +152,7 @@ func (keystore *KeyStore) Generate_ecdsa(derr chan string, secret_key string) bo
 		crypt_ok, ciphertext := Crypt_aes(derr, true, secret_key, encoded_key)
 		if !crypt_ok { break }
 		keystore.EncryptedPrivateKey = Encode_base64(ciphertext)
-		enc_ok, encoded_public_key := Encode_gob(derr, keystore.decodedpublickey)
+		enc_ok, encoded_public_key := Encode_gob(derr, private_key)
 		if !enc_ok { break }
 		keystore.EncodedPublicKey = Encode_base64(encoded_public_key)
 		keystore.PublicKeyHash = SHA_256(keystore.EncodedPublicKey)

@@ -46,6 +46,18 @@ type KeyStore struct {
 	decodedprivatekey interface{}
 }
 
+
+func (keystore *KeyStore) Recover(derr chan string, secret_key string, object interface{}) bool {
+	derr<-"TOOLS/KEYSTORE/RECOVER: USING KEY "+SHA_1(secret_key)
+	for {
+		ok, crypt_bytes := Decode_base64(derr, keystore.EncryptedPrivateKey); if !ok { break }
+		crypt_ok, plaintext := Crypt_aes(derr, false, secret_key, crypt_bytes); if !crypt_ok { break }
+		dec_ok := Decode_gob(derr, plaintext, object); if !dec_ok { break }
+		return true
+	}
+	derr<-"TOOLS/KEYSTORE/RECOVER: FAILED"; return false
+}
+
 type EasyTime struct {
 	Zone, Day_Name, Month_Name string
 	Year, Month, Day int

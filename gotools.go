@@ -164,6 +164,7 @@ func Generate_ecdsa(derr chan string, secret_key string) (bool, *KeyStore) {
 		if !enc_ok { break }
 		keystore.EncodedPublicKey = Encode_base64(encoded_public_key)
 		keystore.PublicKeyHash = SHA_256(keystore.EncodedPublicKey)
+		derr<-"TOOLS/KEYGEN/ECDSA: CREATED NEW KEYSTORE"
 		return true, keystore
 	}
 	derr<-"TOOLS/KEYGEN/ECDSA: FAILED"
@@ -511,15 +512,19 @@ func Quit_slow(derr chan string, msg string) {
 
 func Socket_open(derr chan string, ssl bool, route string, port int, ssl_certpath, ssl_keypath string, handlerfunc func(*websocket.Conn)) {
 	port_string := ":"+IntToString(port)
-	derr<-"TOOLS/SOCKET/OPEN: "+route+" "+port_string
-	http.Handle("/"+route, websocket.Handler(handlerfunc))
-	if ssl {
-		err := http.ListenAndServeTLS(port_string, ssl_certpath, ssl_keypath, nil)
-		if err != nil { derr<-"TOOLS/SOCKET/OPEN: "+err.Error() }
-	} else {
-		err := http.ListenAndServe(port_string, nil)
-		if err != nil { derr<-"TOOLS/SOCKET/OPEN: "+err.Error() }
-	}
+	if string(route[0]) != "/" { route = "/"+route }
+	derr<-"TOOLS/SOCKET/OPEN: "+port_string+route
+	http.Handle(route, websocket.Handler(handlerfunc))
+	go func() {
+		if ssl {
+			err := http.ListenAndServeTLS(port_string, ssl_certpath, ssl_keypath, nil)
+			if err != nil { derr<-"TOOLS/SOCKET/OPEN: "+err.Error() }
+		} else {
+			err := http.ListenAndServe(port_string, nil)
+			if err != nil { derr<-"TOOLS/SOCKET/OPEN: "+err.Error() }
+		}
+		derr<-"TOOLS/SOCKET/OPEN: CLOSED SOCKET "+port_string+route
+	}()
 }
 
 func Socket_dial(derr chan string, url, origin string) (bool, *websocket.Conn) {

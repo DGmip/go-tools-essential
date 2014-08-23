@@ -130,7 +130,7 @@ func Sign_ecdsa(derr chan string, private_key *ecdsa.PrivateKey, object interfac
 // ECDSA keygen
 
 func Recover_ecdsa(derr chan string, keystore *KeyStore, secret_key string) (bool, *ecdsa.PrivateKey) {
-	derr<-"TOOLS/ECDSA/RECOVER: RECOVERING RSA KEY"
+	derr<-"TOOLS/RECOVER/ECDSA: RECOVERING ECDSA KEY"
 	ok, crypt_bytes := Decode_base64(derr, keystore.EncryptedPrivateKey)
 	for {
 		if !ok { break }
@@ -175,7 +175,7 @@ func Generate_ecdsa(derr chan string, secret_key string) (bool, *KeyStore) {
 // RSA keygen
 
 func Recover_rsa(derr chan string, keystore *KeyStore, secret_key string) (bool, *rsa.PrivateKey) {
-	derr<-"TOOLS/RSA/RECOVER: RECOVERING RSA KEY"
+	derr<-"TOOLS/RECOVER/RSA: RECOVERING RSA KEY"
 	ok, crypt_bytes := Decode_base64(derr, keystore.EncryptedPrivateKey)
 	for {
 		if !ok { break }

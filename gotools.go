@@ -141,8 +141,8 @@ func Sign_ecdsa(derr chan string, private_key *ecdsa.PrivateKey, object interfac
 
 // ECDSA keygen
 
-func Generate_ecdsa(derr chan string, key_length int, secret_key string, keystore *KeyStore) bool {
-	derr<-".TOOLS/KEYGEN/ECDSA: CREATING NEW KEYSTORE "+IntToString(key_length)
+func Generate_ecdsa(derr chan string, secret_key string, keystore *KeyStore) bool {
+	derr<-".TOOLS/KEYGEN/ECDSA: CREATING NEW KEYSTORE"
 	for {
 		keystore = &KeyStore{}
 		private_key, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)

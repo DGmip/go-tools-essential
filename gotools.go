@@ -208,6 +208,7 @@ func Generate_rsa(derr chan string, key_length int, secret_key string) (bool, *K
 		if !enc_ok { break }
 		keystore.EncodedPublicKey = Encode_base64(encoded_public_key)
 		keystore.PublicKeyHash = SHA_256(keystore.EncodedPublicKey)
+		derr<-"TOOLS/KEYGEN/RSA: CREATED NEW KEYSTORE "+IntToString(key_length)
 		return true, keystore
 	}
 	derr<-"TOOLS/KEYGEN/RSA: FAILED"

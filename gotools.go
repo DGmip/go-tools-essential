@@ -193,7 +193,6 @@ func Generate_ecdsa(derr chan string, secret_key string) (bool, *KeyStore) {
 
 func (keystore *KeyStore) Generate_rsa(derr chan string, key_length int, secret_key string) bool {
 	derr<-"TOOLS/KEYGEN/RSA: CREATING NEW KEYSTORE "+IntToString(key_length)
-	keystore = &KeyStore{}
 	for {
 		private_key, err := rsa.GenerateKey(rand.Reader, key_length)
 		if err != nil { derr<-"TOOLS/KEYGEN/RSA: "+err.Error(); break }

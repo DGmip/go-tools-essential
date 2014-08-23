@@ -141,6 +141,27 @@ func Sign_ecdsa(derr chan string, private_key *ecdsa.PrivateKey, object interfac
 
 // ECDSA keygen
 
+func (keystore *KeyStore) Generate_ecdsa(derr chan string, key_length int, secret_key string) bool {
+	derr<-".TOOLS/KEYGEN/RSA: CREATING NEW KEYSTORE "+IntToString(key_length)
+	keystore = &KeyStore{}
+	for {
+		private_key, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
+		if err != nil { derr<-err.Error(); break }
+		keystore.ID = "ECDSA"
+		ok, encoded_key := Encode_gob(derr, private_key); if !ok { break }
+		crypt_ok, ciphertext := Crypt_aes(derr, true, secret_key, encoded_key)
+		if !crypt_ok { break }
+		keystore.EncryptedPrivateKey = Encode_base64(ciphertext)
+		enc_ok, encoded_public_key := Encode_gob(derr, keystore.decodedpublickey)
+		if !enc_ok { break }
+		keystore.EncodedPublicKey = Encode_base64(encoded_public_key)
+		keystore.PublicKeyHash = SHA_256(keystore.EncodedPublicKey)
+		return true
+	}
+	derr<-".TOOLS/KEYGEN/ECDSA: FAILED"
+	return false
+}
+
 func Generate_ecdsa(derr chan string, secret_key string) (bool, *KeyStore) {	
 	derr<-"TOOLS/KEYGEN/ECDSA: CREATING NEW KEYSTORE"
 	private_key, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
@@ -176,7 +197,7 @@ func (keystore *KeyStore) Generate_rsa(derr chan string, key_length int, secret_
 	for {
 		private_key, err := rsa.GenerateKey(rand.Reader, key_length)
 		if err != nil { derr<-"TOOLS/KEYGEN/RSA: "+err.Error(); break }
-		keystore.ID = "ECDSA"
+		keystore.ID = "RSA"
 		ok, encoded_key := Encode_gob(derr, private_key); if !ok { break }
 		crypt_ok, ciphertext := Crypt_aes(derr, true, secret_key, encoded_key)
 		if !crypt_ok { break }

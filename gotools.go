@@ -306,6 +306,18 @@ func Crypt_aes(derr chan string, encrypt bool, password string, text []byte) (bo
 			
 /// HASHING
 
+func Digest_valid(derr chan string, digest string) bool {
+	switch(len(digest)) {
+		case 40: break
+		case 64: break
+		case 128: break
+		default:
+			derr<-"DIGEST INVALID, LENGTH "+IntToString(len(digest)); return false
+	}
+	ok, _ := Decode_hex(derr, digest); if ok { return true }
+	derr<-"DIGEST INVALID, HEX DECODE FAILED"; return false
+}
+
 func Digest_object_gob(derr chan string, object interface{}) (bool, string) {
 	ok, encoded := Encode_gob(derr, object)
 	if !ok { return false, "" }; digest, _ := SHA(3, 128, "", encoded)

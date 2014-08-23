@@ -495,6 +495,10 @@ func Socket_open(derr chan string, protocol, route, port, ssl_certpath, ssl_keyp
 	}
 }
 
+// STRINGS
+
+func IntToString(i int) string { return strconv.Itoa(i) }
+
 func String_array_stringify(parts []string) string {
 	output := ""
 	for x := range parts { if len(parts[x]) > 0 { output += parts[x]+" " } }

@@ -130,6 +130,7 @@ func Sign_ecdsa(derr chan string, private_key *ecdsa.PrivateKey, object interfac
 // ECDSA keygen
 
 func Recover_ecdsa(derr chan string, keystore *KeyStore, secret_key string) (bool, *ecdsa.PrivateKey) {
+	derr<-"TOOLS/ECDSA/RECOVER: RECOVERING RSA KEY"
 	ok, crypt_bytes := Decode_base64(derr, keystore.EncryptedPrivateKey)
 	for {
 		if !ok { break }
@@ -145,6 +146,7 @@ func Recover_ecdsa(derr chan string, keystore *KeyStore, secret_key string) (boo
 }
 
 func Generate_ecdsa(derr chan string, secret_key string) (bool, *KeyStore) {	
+	derr<-"TOOLS/KEYGEN/ECDSA: CREATING NEW KEYSTORE"
 	private_key, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
 	if err != nil {
 		derr<-"TOOLS/KEYGEN/ECDSA: "+err.Error()
@@ -164,7 +166,6 @@ func Generate_ecdsa(derr chan string, secret_key string) (bool, *KeyStore) {
 		if !enc_ok { break }
 		keystore.EncodedPublicKey = Encode_base64(encoded_public_key)
 		keystore.PublicKeyHash = SHA_256(keystore.EncodedPublicKey)
-		derr<-"TOOLS/KEYGEN/ECDSA: CREATED NEW KEYSTORE"
 		return true, keystore
 	}
 	derr<-"TOOLS/KEYGEN/ECDSA: FAILED"
@@ -174,6 +175,7 @@ func Generate_ecdsa(derr chan string, secret_key string) (bool, *KeyStore) {
 // RSA keygen
 
 func Recover_rsa(derr chan string, keystore *KeyStore, secret_key string) (bool, *rsa.PrivateKey) {
+	derr<-"TOOLS/RSA/RECOVER: RECOVERING RSA KEY"
 	ok, crypt_bytes := Decode_base64(derr, keystore.EncryptedPrivateKey)
 	for {
 		if !ok { break }
@@ -188,7 +190,8 @@ func Recover_rsa(derr chan string, keystore *KeyStore, secret_key string) (bool,
 	return false, nil
 }
 
-func Generate_rsa(derr chan string, key_length int, secret_key string) (bool, *KeyStore) {	
+func Generate_rsa(derr chan string, key_length int, secret_key string) (bool, *KeyStore) {
+	derr<-"TOOLS/KEYGEN/RSA: CREATING NEW KEYSTORE "+IntToString(key_length)
 	private_key, err := rsa.GenerateKey(rand.Reader, key_length)
 	if err != nil {
 		derr<-"TOOLS/KEYGEN/RSA: "+err.Error()
@@ -208,7 +211,6 @@ func Generate_rsa(derr chan string, key_length int, secret_key string) (bool, *K
 		if !enc_ok { break }
 		keystore.EncodedPublicKey = Encode_base64(encoded_public_key)
 		keystore.PublicKeyHash = SHA_256(keystore.EncodedPublicKey)
-		derr<-"TOOLS/KEYGEN/RSA: CREATED NEW KEYSTORE "+IntToString(key_length)
 		return true, keystore
 	}
 	derr<-"TOOLS/KEYGEN/RSA: FAILED"

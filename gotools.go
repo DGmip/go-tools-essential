@@ -496,6 +496,12 @@ func Socket_open(derr chan string, ssl bool, route string, port int, ssl_certpat
 	}
 }
 
+func Socket_dial(derr chan string, url, origin string) (bool, *websocket.Conn) {
+	ws, err := websocket.Dial(url, "", origin)
+	if err != nil { derr<-"TOOLS/SOCKET/DIAL: "+err.Error(); return false, nil }
+	return true, ws
+}
+
 // STRINGS
 
 func IntToString(i int) string { return strconv.Itoa(i) }

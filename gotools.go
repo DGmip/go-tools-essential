@@ -483,14 +483,15 @@ func Quit_slow(derr chan string, msg string) {
 	os.Exit(1)
 }
 
-func Socket_open(derr chan string, protocol, route, port, ssl_certpath, ssl_keypath string, handlerfunc func(*websocket.Conn)) {
-	derr<-"TOOLS/SOCKET/OPEN: "+protocol+" "+route+" "+port
+func Socket_open(derr chan string, protocol, route string, port int, ssl_certpath, ssl_keypath string, handlerfunc func(*websocket.Conn)) {
+	port_string := ":"+IntToString(port)
+	derr<-"TOOLS/SOCKET/OPEN: "+protocol+" "+route+" "+port_string
 	http.Handle("/"+route, websocket.Handler(handlerfunc))
 	if protocol == "https://" {
-		err := http.ListenAndServeTLS(port, ssl_certpath, ssl_keypath, nil)
+		err := http.ListenAndServeTLS(port_string, ssl_certpath, ssl_keypath, nil)
 		if err != nil { derr<-"TOOLS/SOCKET/OPEN: "+err.Error() }
 	} else {
-		err := http.ListenAndServe(port, nil)
+		err := http.ListenAndServe(port_string, nil)
 		if err != nil { derr<-"TOOLS/SOCKET/OPEN: "+err.Error() }
 	}
 }

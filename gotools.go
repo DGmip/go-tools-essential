@@ -51,8 +51,8 @@ func (keystore *KeyStore) Recover(derr chan string, secret_key string, object in
 	derr<-"TOOLS/KEYSTORE/RECOVER: USING KEY "+SHA_1(secret_key)
 	for {
 		ok, crypt_bytes := Decode_base64(derr, keystore.EncryptedPrivateKey); if !ok { break }
-		crypt_ok, plaintext := Crypt_aes(derr, false, secret_key, crypt_bytes); if !crypt_ok { break }
-		dec_ok := Decode_gob(derr, plaintext, object); if !dec_ok { break }
+		ok, plaintext := Crypt_aes(derr, false, secret_key, crypt_bytes); if !ok { break }
+		ok = Decode_gob(derr, plaintext, object); if !ok { break }
 		return true
 	}
 	derr<-"TOOLS/KEYSTORE/RECOVER: FAILED"; return false
@@ -141,22 +141,6 @@ func Sign_ecdsa(derr chan string, private_key *ecdsa.PrivateKey, object interfac
 
 // ECDSA keygen
 
-func Recover_ecdsa(derr chan string, keystore *KeyStore, secret_key string) (bool, *ecdsa.PrivateKey) {
-	derr<-"TOOLS/RECOVER/ECDSA: RECOVERING ECDSA KEY"
-	ok, crypt_bytes := Decode_base64(derr, keystore.EncryptedPrivateKey)
-	for {
-		if !ok { break }
-		crypt_ok, plaintext := Crypt_aes(derr, false, secret_key, crypt_bytes)
-		if !crypt_ok { break }
-		plain_key := &ecdsa.PrivateKey{}
-		dec_ok := Decode_gob(derr, plaintext, plain_key)
-		if !dec_ok { break }
-		return true, plain_key
-	}
-	derr<-"TOOLS/RECOVER/ECDSA: FAILED"
-	return false, nil
-}
-
 func Generate_ecdsa(derr chan string, secret_key string) (bool, *KeyStore) {	
 	derr<-"TOOLS/KEYGEN/ECDSA: CREATING NEW KEYSTORE"
 	private_key, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
@@ -186,20 +170,25 @@ func Generate_ecdsa(derr chan string, secret_key string) (bool, *KeyStore) {
 
 // RSA keygen
 
-func Recover_rsa(derr chan string, keystore *KeyStore, secret_key string) (bool, *rsa.PrivateKey) {
-	derr<-"TOOLS/RECOVER/RSA: RECOVERING RSA KEY"
-	ok, crypt_bytes := Decode_base64(derr, keystore.EncryptedPrivateKey)
+func (keystore *KeyStore) Generate_rsa(derr chan string, key_length int, secret_key string) bool {
+	derr<-"TOOLS/KEYGEN/RSA: CREATING NEW KEYSTORE "+IntToString(key_length)
+	keystore = &KeyStore{}
 	for {
-		if !ok { break }
-		crypt_ok, plaintext := Crypt_aes(derr, false, secret_key, crypt_bytes)
+		private_key, err := rsa.GenerateKey(rand.Reader, key_length)
+		if err != nil { derr<-"TOOLS/KEYGEN/RSA: "+err.Error(); break }
+		keystore.ID = "ECDSA"
+		ok, encoded_key := Encode_gob(derr, private_key); if !ok { break }
+		crypt_ok, ciphertext := Crypt_aes(derr, true, secret_key, encoded_key)
 		if !crypt_ok { break }
-		plain_key := &rsa.PrivateKey{}
-		dec_ok := Decode_gob(derr, plaintext, plain_key)
-		if !dec_ok { break }
-		return true, plain_key
+		keystore.EncryptedPrivateKey = Encode_base64(ciphertext)
+		enc_ok, encoded_public_key := Encode_gob(derr, keystore.decodedpublickey)
+		if !enc_ok { break }
+		keystore.EncodedPublicKey = Encode_base64(encoded_public_key)
+		keystore.PublicKeyHash = SHA_256(keystore.EncodedPublicKey)
+		return true
 	}
-	derr<-"TOOLS/RECOVER/RSA: FAILED"
-	return false, nil
+	derr<-"TOOLS/KEYGEN/RSA: FAILED"
+	return false
 }
 
 func Generate_rsa(derr chan string, key_length int, secret_key string) (bool, *KeyStore) {

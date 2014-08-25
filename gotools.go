@@ -229,8 +229,8 @@ func Decrypt_rsa(derr chan string, private_key *rsa.PrivateKey, c *CryptObject, 
 
 // AES CBC MODE (compatible with cryptoJS)
 
-func Crypt_aes_cbc(derr chan string, encrypt bool, password string, text []byte, iv []byte) (bool, string) {
-	_, key := SHA(3, 32, password, nil)
+func Crypt_aes_cbc(derr chan string, encrypt bool, password, text, iv []byte) (bool, string) {
+	_, key := SHA(3, 32, "", password)
 	c, err := aes.NewCipher(key)
 	if err != nil {
 		derr<-"TOOLS/AES/CBC "+err.Error()
@@ -284,6 +284,12 @@ func Digest_valid(derr chan string, digest string) bool {
 	}
 	ok, _ := Decode_hex(derr, digest); if ok { return true }
 	derr<-"DIGEST INVALID, HEX DECODE FAILED"; return false
+}
+
+func Digest_object_quick(derr chan string, object interface{}) (bool, []byte) {
+	ok, encoded := Encode_gob(derr, object)
+	if !ok { return false, nil }; _, digest := SHA(3, 128, "", encoded)
+	return true, digest
 }
 
 func Digest_object_gob(derr chan string, object interface{}) (bool, string) {

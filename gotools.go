@@ -64,6 +64,8 @@ type EasyTime struct {
 	Hour, Minute, Second int
 }
 
+func (et *EasyTime) New() *EasyTime { return Time_easy() }
+
 func Time_easy() *EasyTime {
 	t := time.Now()
 	zone, _ := t.Zone()
@@ -581,3 +583,19 @@ func Parse_safe(derr chan string, in string) (bool, string) {
 	derr<-derrp+"ABORTED EVIL INPUT ("+in+")"; return false, ""
 }
 
+func Parse_email(derr chan string, email string) bool {
+	for {
+		if len(email) < 6 { break }
+		if len(email) > 100 { break }
+		if !strings.Contains(email, "@") { break }
+		if !strings.Contains(email, ".") { break }
+		s := strings.Split(email, "@")
+		if len(s) != 2 { break }
+		s = strings.Split(email, ".")
+		if len(s) < 2 { break }
+		emailset := "@_-+"+CharSet_select("alpha")+CharSet_select("float")
+		for x := range email { if !strings.Contains(emailset, string(email[x])) { derr<-"EMAIL DOESNT MATCH EMAIL CHARSET"; return(false) } }
+		return(true)
+	}
+	return(false)
+}

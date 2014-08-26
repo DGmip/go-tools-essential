@@ -567,6 +567,8 @@ func CharSet_select(set_type string) string {
 	return "!"
 }
 
+func Sleep(seconds int) { for seconds > 0 { seconds--; time.Sleep(time.Second) } } 
+
 func Format_float(f float64, l int) string { return(strconv.FormatFloat(f, 'f', l, 64)) }
 
 func Parse_sanitize(input string) string { return strings.ToLower(sanitize.HTML(input)) }

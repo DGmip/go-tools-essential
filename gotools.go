@@ -24,6 +24,7 @@ import (
 		"crypto/sha256"
 		"crypto/sha512"
 		"crypto/rand"
+		"crypto/x509"
 		"github.com/kennygrant/sanitize"
 		"code.google.com/p/go.crypto/sha3"
 		"github.com/dchest/scrypt"
@@ -141,48 +142,65 @@ func Sign_ecdsa(derr chan string, private_key *ecdsa.PrivateKey, object interfac
 	return false, nil
 }
 
-// ECDSA keygen
+// KEYGEN
 
-func Generate_ecdsa(derr chan string, secret_key string, keystore *KeyStore) bool {
-	derr<-"TOOLS/KEYGEN/ECDSA: CREATING NEW KEYSTORE"
+func Generate_openssl(derr chan string, key_length int, secret_key string, keystore *KeyStore) bool {
+	keyfile := "temp_rsa.key"
+	derr<-"GETTING A NEW RSA KEY FROM OPENSSL"
 	for {
-		keystore = &KeyStore{}
-		private_key, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
-		if err != nil { derr<-"TOOLS/KEYGEN/ECDSA: "+err.Error(); break }
-		keystore.ID = "ECDSA"
-		ok, encoded_key := Encode_gob(derr, private_key); if !ok { break }
-		crypt_ok, ciphertext := Crypt_aes(derr, true, secret_key, encoded_key); if !crypt_ok { break }
-		keystore.EncryptedPrivateKey = Encode_base64(ciphertext)
-		enc_ok, encoded_public_key := Encode_gob(derr, private_key); if !enc_ok { break }
-		keystore.EncodedPublicKey = Encode_base64(encoded_public_key)
-		keystore.PublicKeyHash = SHA_256(keystore.EncodedPublicKey)
-		return true
+		cmd := exec.Command("openssl", "genrsa", "-out", keyfile, IntToString(key_length))
+		_, rsaerr := cmd.CombinedOutput()
+		if rsaerr != nil { derr<-"ERROR LAUNCHING OPENSSL"; break }
+		cmd = exec.Command("openssl", "rsa", "-in", keyfile, "-out", keyfile+".der", "-outform", "DER")
+		_, rsaerr = cmd.CombinedOutput(); if rsaerr != nil { derr<-"ERROR CONVERTING OPENSSL KEY"; break }
+		ok, privatekeyfile := File_read_bytes(derr, keyfile+".der"); if !ok { break }
+		private_key, err := x509.ParsePKCS1PrivateKey(privatekeyfile); if err != nil { derr<-"ERROR OPENING OPENSSL PRIVATE KEY"; break }
+		ok, new_keystore := keystore_privatekey(derr, private_key, "RSA", secret_key); if !ok { break }
+		cmd = exec.Command("openssl", "rsa", "-in", keyfile, "-pubout")
+		publickey, rsa_err := cmd.CombinedOutput(); if rsa_err != nil { derr<-"ERROR OPENING OPENSSL PRIVATE KEY"; break }
+		kkk := strings.Replace(string(publickey), "\n", "", -1)
+		kk := strings.Split(kkk, "-")
+		for k := range kk { if len(kk[k]) > 99 { new_keystore.EncodedPublicKey = kk[k] } }
+		keystore = new_keystore; return true
 	}
-	derr<-"TOOLS/KEYGEN/ECDSA: FAILED"
-	return false
+	derr<-"OPENSSL FAILED TO GENERATE NEW RSA KEY"; return false
 }
 
-// RSA keygen
+func Generate_ecdsa(derr chan string, key_length int, secret_key string, keystore *KeyStore) bool {
+	derr<-"TOOLS/KEYGEN/ECDSA: CREATING NEW KEYSTORE "+IntToString(key_length)
+	for {
+		private_key, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader); if err != nil { derr<-"TOOLS/KEYGEN/ECDSA: "+err.Error(); break }
+		ok, new_keystore := keystore_privatekey(derr, private_key, "ECDSA", secret_key); if !ok { break }
+		keystore = new_keystore; return true
+	}
+	derr<-"TOOLS/KEYGEN/ECDSA: FAILED"; return false
+}
 
 func Generate_rsa(derr chan string, key_length int, secret_key string, keystore *KeyStore) bool {
 	derr<-"TOOLS/KEYGEN/RSA: CREATING NEW KEYSTORE "+IntToString(key_length)
 	for {
-		keystore = &KeyStore{}
-		private_key, err := rsa.GenerateKey(rand.Reader, key_length)
-		if err != nil { derr<-"TOOLS/KEYGEN/RSA: "+err.Error(); break }
-		keystore.ID = "RSA"
+		private_key, err := rsa.GenerateKey(rand.Reader, key_length); if err != nil { derr<-"TOOLS/KEYGEN/RSA: "+err.Error(); break }
+		ok, new_keystore := keystore_privatekey(derr, private_key, "RSA", secret_key); if !ok { break }
+		keystore = new_keystore; return true
+	}
+	derr<-"TOOLS/KEYGEN/RSA: FAILED"; return false
+}
+	
+func keystore_privatekey(derr chan string, private_key interface{}, key_id, secret_key string) (bool, *KeyStore) {
+	for {
+		keystore := &KeyStore{}
+		keystore.ID = key_id
 		ok, encoded_key := Encode_gob(derr, private_key); if !ok { break }
 		ok, ciphertext := Crypt_aes(derr, true, secret_key, encoded_key); if !ok { break }
 		keystore.EncryptedPrivateKey = Encode_base64(ciphertext)
 		ok, encoded_public_key := Encode_gob(derr, private_key); if !ok { break }
 		keystore.EncodedPublicKey = Encode_base64(encoded_public_key)
 		keystore.PublicKeyHash = SHA_256(keystore.EncodedPublicKey)
-		return true
+		return true, keystore
 	}
-	derr<-"TOOLS/KEYGEN/RSA: FAILED"
-	return false
-}
-	
+	derr<-"FAILED TO STORE PRIVATE KEY IN KEYSTORE"; return false, nil
+}	
+
 // RSA encrypt / decrypt bytes
 
 func Encrypt_rsa_encoded(derr chan string, public_key_encoded string, data interface{}) (bool, *CryptObject) {

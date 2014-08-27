@@ -420,14 +420,14 @@ func File_dir_list(derr chan string, path string) (bool, []string) {
 }
 
 func File_write_string(derr chan string, file_path, payload string) bool {
-	f, err := os.Create(file_path)
-	if err == nil {	defer f.Close(); f.Write([]byte(payload)); return true }
+	f, err := os.Create(file_path); defer f.Close();
+	if err == nil { f.Write([]byte(payload)); return true }
 	derr<-"TOOLS/FILE/WRITE/STRING: "+err.Error(); return false
 }
 
 func File_write_bytes(derr chan string, file_path string, payload []byte) bool {
-	f, err := os.Create(file_path)
-	if err == nil {	defer f.Close(); f.Write(payload); return true }
+	f, err := os.Create(file_path); defer f.Close();
+	if err == nil { f.Write(payload); return true }
 	derr<-"TOOLS/FILE/WRITE/BYTES: "+err.Error(); return false
 }
 

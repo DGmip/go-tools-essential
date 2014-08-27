@@ -270,26 +270,24 @@ func Crypt_aes_cbc(derr chan string, encrypt bool, password, text, iv []byte) (b
 // AES encrypt/decrypt
 		
 func Crypt_aes(derr chan string, encrypt bool, password string, text []byte) (bool, []byte) {
-	output := []byte{}
-	_, key := SHA(3, 32, password, nil)
-	block, err := aes.NewCipher(key)   
-	if err != nil { derr<-"TOOLS/AES "+err.Error(); return false, nil }
-	if encrypt {
-		ciphertext := make([]byte, aes.BlockSize+len(string(text)))
-		iv := ciphertext[:aes.BlockSize]
-		if _, err := io.ReadFull(rand.Reader, iv); err != nil { derr<-"IO READER FAIL"; return false, nil }
-		cfb := cipher.NewCFBEncrypter(block, iv)
-		cfb.XORKeyStream(ciphertext[aes.BlockSize:], text)
-		output = ciphertext
-	} else {
-		if len(string(text)) < aes.BlockSize { derr<-"CIPHERTEXT IS TOO SHORT"; return false, nil }
-		iv := text[:aes.BlockSize]
+	_, key := SHA(3, 48, password, nil)
+	for {
+		block, err := aes.NewCipher(key[0:32]); if err != nil { derr<-"TOOLS/AES "+err.Error(); break }
+		if encrypt {
+			ciphertext := make([]byte, aes.BlockSize+len(string(text)))
+			iv := ciphertext[:aes.BlockSize]
+			if _, err := io.ReadFull(rand.Reader, iv); err != nil { derr<-"TOOLS/AES IO READER FAIL"; break }
+			cfb := cipher.NewCFBEncrypter(block, iv)
+			cfb.XORKeyStream(ciphertext[aes.BlockSize:], text)
+			return true, ciphertext
+		}
+		if len(text) < aes.BlockSize { derr<-"TOOLS/AES CIPHERTEXT IS TOO SHORT"; break }
 		text = text[aes.BlockSize:]
-		cfb := cipher.NewCFBDecrypter(block, iv)
+		cfb := cipher.NewCFBDecrypter(block, key[32:48])
 		cfb.XORKeyStream(text, text)
-		output = text
+		return true, text
 	}
-	return true, output
+	derr<-"TOOLS/AES FUNCTION FAILED"; return false, nil
 }
 			
 /// HASHING

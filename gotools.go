@@ -167,7 +167,7 @@ func Generate_openssl(derr chan string, key_length int, secret_key string, keyst
 }
 
 func Generate_ecdsa(derr chan string, secret_key string, keystore *KeyStore) bool {
-	derr<-"TOOLS/KEYGEN/ECDSA: CREATING NEW KEYSTORE "+IntToString(key_length)
+	derr<-"TOOLS/KEYGEN/ECDSA: CREATING NEW KEYSTORE"
 	for {
 		private_key, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader); if err != nil { derr<-"TOOLS/KEYGEN/ECDSA: "+err.Error(); break }
 		ok, new_keystore := keystore_privatekey(derr, private_key, "ECDSA", secret_key); if !ok { break }

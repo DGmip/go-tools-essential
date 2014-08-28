@@ -167,24 +167,24 @@ func Generate_openssl(derr chan string, key_length int, secret_key string, keyst
 	derr<-"OPENSSL FAILED TO GENERATE NEW RSA KEY"; return false
 }
 
-func Generate_ecdsa(derr chan string, secret_key string, keystore *KeyStore) bool {
+func Generate_ecdsa(derr chan string, secret_key string) (bool, *KeyStore) {
 	derr<-"TOOLS/KEYGEN/ECDSA: CREATING NEW KEYSTORE"
 	for {
 		private_key, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader); if err != nil { derr<-"TOOLS/KEYGEN/ECDSA: "+err.Error(); break }
 		ok, new_keystore := keystore_privatekey(derr, private_key, "ECDSA", secret_key); if !ok { break }
-		keystore = new_keystore; return true
+		return true, new_keystore
 	}
-	derr<-"TOOLS/KEYGEN/ECDSA: FAILED"; return false
+	derr<-"TOOLS/KEYGEN/ECDSA: FAILED"; return false, nil
 }
 
-func Generate_rsa(derr chan string, key_length int, secret_key string, keystore *KeyStore) bool {
+func Generate_rsa(derr chan string, key_length int, secret_key string) (bool, *KeyStore) {
 	derr<-"TOOLS/KEYGEN/RSA: CREATING NEW KEYSTORE "+IntToString(key_length)
 	for {
 		private_key, err := rsa.GenerateKey(rand.Reader, key_length); if err != nil { derr<-"TOOLS/KEYGEN/RSA: "+err.Error(); break }
 		ok, new_keystore := keystore_privatekey(derr, private_key, "RSA", secret_key); if !ok { break }
-		keystore = new_keystore; return true
+		return true, new_keystore
 	}
-	derr<-"TOOLS/KEYGEN/RSA: FAILED"; return false
+	derr<-"TOOLS/KEYGEN/RSA: FAILED"; return false, nil
 }
 	
 func keystore_privatekey(derr chan string, private_key interface{}, key_id, secret_key string) (bool, *KeyStore) {

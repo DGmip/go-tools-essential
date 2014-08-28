@@ -53,10 +53,11 @@ func (keystore *KeyStore) Recover(derr chan string, secret_key string, object in
 		if len(keystore.EncryptedPrivateKey) == 0 { derr<-"KEYSTORE SEEMS TO BE EMPTY"; break }
 		ok, crypt_bytes := Decode_base64(derr, keystore.EncryptedPrivateKey); if !ok { break }
 		ok, plain_text := Crypt_aes(derr, false, secret_key, crypt_bytes); if !ok { derr<-"TOOLS/KEYSTORE/RECOVER CANT DECRYPT"; break }
-		ok = Decode_gob(derr, plain_text, object); if !ok { derr<-string(plain_text); break }
-		return true
+		if keystore.ID == "ECDSA" { ok = Decode_json(derr, plain_text, object); if !ok { derr<-string(plain_text); break } }
+		if keystore.ID == "RSA" { ok = Decode_gob(derr, plain_text, object); if !ok { derr<-string(plain_text); break } }
+		if object == nil { break}; return true
 	}
-	derr<-"TOOLS/KEYSTORE/RECOVER: FAILED"; return false
+	derr<-"TOOLS/KEYSTORE/RECOVER "+keystore.ID+" FAILED"; return false
 }
 
 type EasyTime struct {
@@ -186,10 +187,10 @@ func keystore_privatekey(derr chan string, private_key interface{}, key_id, secr
 	for {
 		keystore := &KeyStore{}
 		keystore.ID = key_id
-		ok := false
-		encoded_key := []byte{}
-		if key_id == "ECDSA" { ok, encoded_key = Encode_gob(derr, private_key.(*ecdsa.PrivateKey)); if !ok { break } }
-		if key_id == "RSA" { ok, encoded_key = Encode_gob(derr, private_key.(*rsa.PrivateKey)); if !ok { break } }	
+		ok := false; encoded_key := []byte{}
+		if key_id == "ECDSA" { ok, encoded_key = Encode_json(derr, private_key); if !ok { break } }
+		if key_id == "RSA" { ok, encoded_key = Encode_gob(derr, private_key); if !ok { break } }
+		if len(encoded_key) == 0 { break }
 		ok, ciphertext := Crypt_aes(derr, true, secret_key, encoded_key); if !ok { break }
 		keystore.EncryptedPrivateKey = Encode_base64(ciphertext)
 		ok, encoded_public_key := Encode_gob(derr, private_key); if !ok { break }

@@ -271,7 +271,7 @@ func Crypt_aes_cbc(derr chan string, encrypt bool, password, text, iv []byte) (b
 // AES encrypt/decrypt
 		
 func Crypt_aes(derr chan string, encrypt bool, password string, text []byte) (bool, []byte) {
-	_, key := SHA(3, 48, password, nil)
+	_, key := SHA(3, 128, password, nil)
 	for {
 		block, err := aes.NewCipher(key[0:32]); if err != nil { derr<-"TOOLS/AES "+err.Error(); break }
 		if encrypt {

@@ -534,19 +534,16 @@ func Application_run(derr chan string, error_filepath string, commands []string)
 				case 3: cmd = exec.Command(commands[0], commands[1], commands[2])
 				case 4: cmd = exec.Command(commands[0], commands[1], commands[2], commands[3])
 				case 5: cmd = exec.Command(commands[0], commands[1], commands[2], commands[3], commands[4])
-				default:	derr<-"TOOLS/APP/RUN: WRONG NUMBER OF COMMANDS"; break
+				default:	derr<-"TOOLS/APP/RUN WRONG NUMBER OF COMMANDS"; break
 			}
 			start_err := cmd.Start()
 			if start_err != nil { derr<-"TOOLS/APP/RUN: "+start_err.Error(); break }
 			bool_channel <- true
+			derr<-"TOOLS/APP/RUN WAITING FOR APP TO FINISH..."
 			cmd.Wait()
-			logfile := "ERROR OPENING LOGFILE "+error_filepath
-			logfile_bytes, err := ioutil.ReadFile(error_filepath)
-			if err == nil {
-				logfile = string(logfile_bytes)
-				if len(logfile) > 600 { logfile = logfile[0:599] }
-			}
-			output_channel <- logfile
+			log_file := "FAILED TO ACCESS EXEC.COMBINEDOUTPUT"
+			output_bytes, err := cmd.CombinedOutput(); if err == nil { log_file = "TOOLS/APP/RUN(OUTPUT): "+string(output_bytes) } else { derr<-"TOOLS/APP/RUN "+err.Error() }
+			output_channel <- log_file
 		}
 		bool_channel <- false
 	}(success_channel, return_channel)

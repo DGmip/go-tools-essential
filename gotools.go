@@ -2,7 +2,6 @@ package tools
 
 import (
 		"os"
-		"io"
 		"os/exec"
 		"io/ioutil"
 		"time"
@@ -250,44 +249,28 @@ func Decrypt_rsa(derr chan string, private_key *rsa.PrivateKey, c *CryptObject, 
 
 // AES CBC MODE (compatible with cryptoJS)
 
-func Crypt_aes_cbc(derr chan string, encrypt bool, password, text, iv []byte) (bool, []byte) {
-	_, key := SHA(2, 32, "", password)
+func Crypt_aes_cbc(derr chan string, encrypt bool, password string, input_text, iv []byte) (bool, []byte) {
+	_, key := SHA(2, 32, password, nil)
 	c, err := aes.NewCipher(key)
 	if err != nil { derr<-"TOOLS/AES/CBC "+err.Error(); return false, nil }
-	newbuffer := make([]byte, len(text))
 	if encrypt {
-		encrypter := cipher.NewCBCEncrypter(c, iv)
-		encrypter.CryptBlocks(newbuffer, text)
-		return true, newbuffer
-	} else {
-		decrypter := cipher.NewCBCDecrypter(c, iv)
-		decrypter.CryptBlocks(text, newbuffer)
-		return true, newbuffer
+		encoded := Encode_base64(input_text)
+		for ii := 0; (len(encoded) % 16) != 0; ii++ { encoded += "^" }
+		buf := make([]byte, len(encoded))
+		crypter := cipher.NewCBCEncrypter(c, iv)
+		crypter.CryptBlocks(buf, []byte(encoded))
+		return true, buf
 	}
-	return false, nil
+	crypter := cipher.NewCBCDecrypter(c, iv)
+	crypter.CryptBlocks(input_text, input_text)
+	ok, decoded_bytes := Decode_base64(derr, strings.Replace(string(input_text), "^", "", -1)); if !ok { return false, nil } 
+	return true, decoded_bytes
 }
 
 // AES encrypt/decrypt
 		
-func Crypt_aes(derr chan string, encrypt bool, password string, text []byte) (bool, []byte) {
-	_, key := SHA(3, 128, password, nil)
-	for {
-		block, err := aes.NewCipher(key[0:32]); if err != nil { derr<-"TOOLS/AES "+err.Error(); break }
-		if encrypt {
-			ciphertext := make([]byte, aes.BlockSize+len(string(text)))
-			iv := ciphertext[:aes.BlockSize]
-			if _, err := io.ReadFull(rand.Reader, iv); err != nil { derr<-"TOOLS/AES IO READER FAIL"; break }
-			cfb := cipher.NewCFBEncrypter(block, iv)
-			cfb.XORKeyStream(ciphertext[aes.BlockSize:], text)
-			return true, ciphertext
-		}
-		if len(text) < aes.BlockSize { derr<-"TOOLS/AES CIPHERTEXT IS TOO SHORT"; break }
-		text = text[aes.BlockSize:]
-		cfb := cipher.NewCFBDecrypter(block, key[32:48])
-		cfb.XORKeyStream(text, text)
-		return true, text
-	}
-	derr<-"TOOLS/AES FUNCTION FAILED"; return false, nil
+func Crypt_aes(derr chan string, encrypt bool, password string, input_text []byte) (bool, []byte) {
+	_, iv := SHA(3, 16, password, nil); return Crypt_aes_cbc(derr, encrypt, password, input_text, iv)
 }
 			
 /// HASHING

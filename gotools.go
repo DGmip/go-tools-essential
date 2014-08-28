@@ -53,9 +53,9 @@ func (keystore *KeyStore) Recover(derr chan string, secret_key string, object in
 		if len(keystore.EncryptedPrivateKey) == 0 { derr<-"KEYSTORE SEEMS TO BE EMPTY"; break }
 		ok, crypt_bytes := Decode_base64(derr, keystore.EncryptedPrivateKey); if !ok { break }
 		ok, plain_text := Crypt_aes(derr, false, secret_key, crypt_bytes); if !ok { derr<-"TOOLS/KEYSTORE/RECOVER CANT DECRYPT"; break }
-		if keystore.ID == "ECDSA" { ok = Decode_json(derr, plain_text, object); if !ok { derr<-string(plain_text); break } }
+		if keystore.ID == "ECDSA" { ok = Decode_gob(derr, plain_text, object); if !ok { derr<-string(plain_text); break } }
 		if keystore.ID == "RSA" { ok = Decode_gob(derr, plain_text, object); if !ok { derr<-string(plain_text); break } }
-		if object == nil { break}; return true
+		if object == nil { break }; return true
 	}
 	derr<-"TOOLS/KEYSTORE/RECOVER "+keystore.ID+" FAILED"; return false
 }
@@ -166,7 +166,7 @@ func Generate_openssl(derr chan string, key_length int, secret_key string, keyst
 func Generate_ecdsa(derr chan string, secret_key string) (bool, *KeyStore) {
 	derr<-"TOOLS/KEYGEN/ECDSA CREATING NEW KEYSTORE"
 	for {
-		private_key, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader); if err != nil { derr<-"TOOLS/KEYGEN/ECDSA: "+err.Error(); break }
+		private_key, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader); if err != nil { derr<-"TOOLS/KEYGEN/ECDSA: "+err.Error(); break }
 		ok, new_keystore := keystore_privatekey(derr, private_key, "ECDSA", secret_key); if !ok { break }
 		return true, new_keystore
 	}
@@ -188,7 +188,7 @@ func keystore_privatekey(derr chan string, private_key interface{}, key_id, secr
 		keystore := &KeyStore{}
 		keystore.ID = key_id
 		ok := false; encoded_key := []byte{}
-		if key_id == "ECDSA" { ok, encoded_key = Encode_json(derr, private_key); if !ok { break } }
+		if key_id == "ECDSA" { ok, encoded_key = Encode_gob(derr, private_key); if !ok { break } }
 		if key_id == "RSA" { ok, encoded_key = Encode_gob(derr, private_key); if !ok { break } }
 		if len(encoded_key) == 0 { break }
 		ok, ciphertext := Crypt_aes(derr, true, secret_key, encoded_key); if !ok { break }

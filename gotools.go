@@ -433,7 +433,6 @@ func File_makepath(derr chan string, path string) bool {
 	for p := range parts {
 		if len(parts[p]) < 1 { continue }
 		prog += parts[p]+"/"
-		_, open_err := os.Open(prog); if open_err != nil { derr<-"TOOLS/FILE/MAKEPATH: "+open_err.Error(); return false }
 		os.Mkdir(prog, 0700);
 	}
 	return true

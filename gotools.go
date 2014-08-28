@@ -521,7 +521,7 @@ func Application_run(derr chan string, error_filepath string, commands []string)
 	derr<-"TOOLS/APP/RUN: "+String_array_stringify(commands)
 	success_channel := make(chan bool, 2)
 	return_channel := make(chan string, 2)
-	go func(bool_channel chan bool, output_channel chan string) {
+	go func(derr chan string, bool_channel chan bool, output_channel chan string) {
 		for {
 			error_file, err := os.Create(error_filepath)
 			if err != nil { derr<-"TOOLS/APP/RUN: "+err.Error(); break }
@@ -536,17 +536,21 @@ func Application_run(derr chan string, error_filepath string, commands []string)
 				case 5: cmd = exec.Command(commands[0], commands[1], commands[2], commands[3], commands[4])
 				default:	derr<-"TOOLS/APP/RUN WRONG NUMBER OF COMMANDS"; break
 			}
+			derr<-"TOOLS/APP/RUN STARTING APPLICATION..."
 			start_err := cmd.Start()
-			if start_err != nil { derr<-"TOOLS/APP/RUN: "+start_err.Error(); break }
+			if start_err != nil { derr<-"TOOLS/APP/RUN "+start_err.Error(); break }
 			bool_channel <- true
-			derr<-"TOOLS/APP/RUN WAITING FOR APP TO FINISH..."
+			derr<-"TOOLS/APP/RUN WAITING FOR APP TO FINISH..."; 
 			cmd.Wait()
-			log_file := "FAILED TO ACCESS EXEC.COMBINEDOUTPUT"
-			output_bytes, err := cmd.CombinedOutput(); if err == nil { log_file = "TOOLS/APP/RUN(OUTPUT): "+string(output_bytes) } else { derr<-"TOOLS/APP/RUN "+err.Error() }
-			output_channel <- log_file
+			output_bytes, err := cmd.CombinedOutput()
+			if err == nil {
+				output_channel<-"TOOLS/APP/RUN(OUTPUT): "+string(output_bytes); return
+			}
+			derr<-"TOOLS/APP/RUN "+err.Error()
+			output_channel<-"TOOLS/APP/RUN FAILED TO ACCESS EXEC.COMBINEDOUTPUT"; return
 		}
 		bool_channel <- false
-	}(success_channel, return_channel)
+	}(derr, success_channel, return_channel)
 	return success_channel, return_channel
 }
 

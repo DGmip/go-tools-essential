@@ -453,19 +453,17 @@ func URL_post(derr chan string, target_url string, values_map map[string]string)
 	return true, string(server_response)
 }
 
-func URL_get(derr chan string, url string) (bool, string) {
-	resp, err := http.Get(url)
-	if err != nil || resp == nil {
-		derr<-"TOOLS/URL/GET: "+err.Error()
-		return false, "!"
+func URL_get(derr chan string, url string) (bool, string) { ok, b := URL_get_bytes(derr, url); if ok { return true, string(b) }; return false, "" }
+func URL_get_bytes(derr chan string, url string) (bool, []byte) {
+	for {
+		resp, err := http.Get(url); defer resp.Body.Close()
+		if err != nil || resp == nil { derr<-"TOOLS/URL/GET: "+err.Error(); break }
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil || body == nil { derr<-"TOOLS/URL/GET: "+err.Error(); break }
+		return true, body
 	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil || body == nil {
-		derr<-"TOOLS/URL/GET: "+err.Error()
-		return false, "!"
-	}
-	return true, string(body)
+	derr<-"TOOLS/URL/GET FAILED TO GET RESOURCE"
+	return false, nil
 }
 
 func Valid_hash(l int, x string) bool {

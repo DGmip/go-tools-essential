@@ -5,6 +5,7 @@ import (
 		"os/exec"
 		"io/ioutil"
 		"time"
+		"errors"
 		"strings"
 		"strconv"
 		"bytes"
@@ -47,17 +48,17 @@ type KeyStore struct {
 }
 
 
-func (keystore *KeyStore) Recover(derr chan string, secret_key string, object interface{}) bool {
+func (keystore *KeyStore) Recover(derr chan string, secret_key string) (bool, interface{}) {
 	derr<-"TOOLS/KEYSTORE/RECOVER: USING KEY "+SHA_1(secret_key)
 	for {
 		if len(keystore.EncryptedPrivateKey) == 0 { derr<-"KEYSTORE SEEMS TO BE EMPTY"; break }
 		ok, crypt_bytes := Decode_base64(derr, keystore.EncryptedPrivateKey); if !ok { break }
 		ok, plain_text := Crypt_aes(derr, false, secret_key, crypt_bytes); if !ok { derr<-"TOOLS/KEYSTORE/RECOVER CANT DECRYPT"; break }
-		if keystore.ID == "ECDSA" { ok = Decode_gob(derr, plain_text, object); if !ok { derr<-string(plain_text); break } }
-		if keystore.ID == "RSA" { ok = Decode_gob(derr, plain_text, object); if !ok { derr<-string(plain_text); break } }
-		if object == nil { break }; return true
+		if keystore.ID == "ECDSA" {	private_key, err := x509.ParseECPrivateKey(plain_text); if err == nil { return true, private_key }; derr<-"TOOLS/RECOVER/ECDSA: "+err.Error() }
+		if keystore.ID == "RSA" { private_key := &rsa.PrivateKey{}; if Decode_gob(derr, plain_text, private_key) { return true, private_key } }
+		derr<-string(plain_text); break
 	}
-	derr<-"TOOLS/KEYSTORE/RECOVER "+keystore.ID+" FAILED"; return false
+	derr<-"TOOLS/KEYSTORE/RECOVER "+keystore.ID+" FAILED"; return false, nil
 }
 
 type EasyTime struct {
@@ -187,8 +188,8 @@ func keystore_privatekey(derr chan string, private_key interface{}, key_id, secr
 	for {
 		keystore := &KeyStore{}
 		keystore.ID = key_id
-		ok := false; encoded_key := []byte{}
-		if key_id == "ECDSA" { ok, encoded_key = Encode_gob(derr, private_key); if !ok { break } }
+		ok := false; encoded_key := []byte{}; err := errors.New("")
+		if key_id == "ECDSA" { encoded_key, err = x509.MarshalECPrivateKey(private_key.(*ecdsa.PrivateKey)); if err != nil { derr<-"X509 FAILED"; break } }
 		if key_id == "RSA" { ok, encoded_key = Encode_gob(derr, private_key); if !ok { break } }
 		if len(encoded_key) == 0 { break }
 		ok, ciphertext := Crypt_aes(derr, true, secret_key, encoded_key); if !ok { break }

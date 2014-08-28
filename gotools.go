@@ -250,22 +250,21 @@ func Decrypt_rsa(derr chan string, private_key *rsa.PrivateKey, c *CryptObject, 
 
 // AES CBC MODE (compatible with cryptoJS)
 
-func Crypt_aes_cbc(derr chan string, encrypt bool, password, text, iv []byte) (bool, string) {
-	_, key := SHA(3, 32, "", password)
+func Crypt_aes_cbc(derr chan string, encrypt bool, password, text, iv []byte) (bool, []byte) {
+	_, key := SHA(2, 32, "", password)
 	c, err := aes.NewCipher(key)
-	if err != nil {
-		derr<-"TOOLS/AES/CBC "+err.Error()
-		return false, "!"
-	}
+	if err != nil { derr<-"TOOLS/AES/CBC "+err.Error(); return false, nil }
 	newbuffer := make([]byte, len(text))
 	if encrypt {
 		encrypter := cipher.NewCBCEncrypter(c, iv)
 		encrypter.CryptBlocks(newbuffer, text)
-		return true, Encode_base64(newbuffer)
+		return true, newbuffer
+	} else {
+		decrypter := cipher.NewCBCDecrypter(c, iv)
+		decrypter.CryptBlocks(text, newbuffer)
+		return true, newbuffer
 	}
-	decrypter := cipher.NewCBCDecrypter(c, iv)
-	decrypter.CryptBlocks(text, newbuffer)
-	return true, string(newbuffer)
+	return false, nil
 }
 
 // AES encrypt/decrypt

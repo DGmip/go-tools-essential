@@ -52,7 +52,7 @@ func (keystore *KeyStore) Recover(derr chan string, secret_key string, object in
 	for {
 		if len(keystore.EncryptedPrivateKey) == 0 { derr<-"KEYSTORE SEEMS TO BE EMPTY"; break }
 		ok, crypt_bytes := Decode_base64(derr, keystore.EncryptedPrivateKey); if !ok { break }
-		ok, plain_text := Crypt_aes(derr, false, secret_key, crypt_bytes); if !ok { break }
+		ok, plain_text := Crypt_aes(derr, false, secret_key, crypt_bytes); if !ok { derr<-"TOOLS/KEYSTORE/RECOVER CANT DECRYPT"; break }
 		ok = Decode_gob(derr, plain_text, object); if !ok { derr<-string(plain_text); break }
 		return true
 	}
@@ -163,13 +163,13 @@ func Generate_openssl(derr chan string, key_length int, secret_key string, keyst
 }
 
 func Generate_ecdsa(derr chan string, secret_key string) (bool, *KeyStore) {
-	derr<-"TOOLS/KEYGEN/ECDSA: CREATING NEW KEYSTORE"
+	derr<-"TOOLS/KEYGEN/ECDSA CREATING NEW KEYSTORE"
 	for {
 		private_key, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader); if err != nil { derr<-"TOOLS/KEYGEN/ECDSA: "+err.Error(); break }
 		ok, new_keystore := keystore_privatekey(derr, private_key, "ECDSA", secret_key); if !ok { break }
 		return true, new_keystore
 	}
-	derr<-"TOOLS/KEYGEN/ECDSA: FAILED"; return false, nil
+	derr<-"TOOLS/KEYGEN/ECDSA FAILED"; return false, nil
 }
 
 func Generate_rsa(derr chan string, key_length int, secret_key string) (bool, *KeyStore) {
@@ -186,7 +186,10 @@ func keystore_privatekey(derr chan string, private_key interface{}, key_id, secr
 	for {
 		keystore := &KeyStore{}
 		keystore.ID = key_id
-		ok, encoded_key := Encode_gob(derr, private_key); if !ok { break }
+		ok := false
+		encoded_key := []byte{}
+		if key_id == "ECDSA" { ok, encoded_key = Encode_gob(derr, private_key.(*ecdsa.PrivateKey)); if !ok { break } }
+		if key_id == "RSA" { ok, encoded_key = Encode_gob(derr, private_key.(*rsa.PrivateKey)); if !ok { break } }	
 		ok, ciphertext := Crypt_aes(derr, true, secret_key, encoded_key); if !ok { break }
 		keystore.EncryptedPrivateKey = Encode_base64(ciphertext)
 		ok, encoded_public_key := Encode_gob(derr, private_key); if !ok { break }
@@ -194,7 +197,7 @@ func keystore_privatekey(derr chan string, private_key interface{}, key_id, secr
 		keystore.PublicKeyHash = SHA_256(keystore.EncodedPublicKey)
 		return true, keystore
 	}
-	derr<-"FAILED TO STORE PRIVATE KEY IN KEYSTORE"; return false, nil
+	derr<-"FAILED TO STORE "+key_id+" KEY IN KEYSTORE"; return false, nil
 }	
 
 // RSA encrypt / decrypt bytes

@@ -48,17 +48,17 @@ type KeyStore struct {
 }
 
 
-func (keystore *KeyStore) Recover(derr chan string, secret_key string) (bool, interface{}) {
+func (keystore *KeyStore) Recover(derr chan string, secret_key string) (bool, *ecdsa.PrivateKey, *rsa.PrivateKey) {
 	derr<-"TOOLS/KEYSTORE/RECOVER: USING KEY "+SHA_1(secret_key)
 	for {
 		if len(keystore.EncryptedPrivateKey) == 0 { derr<-"KEYSTORE SEEMS TO BE EMPTY"; break }
 		ok, crypt_bytes := Decode_base64(derr, keystore.EncryptedPrivateKey); if !ok { break }
 		ok, plain_text := Crypt_aes(derr, false, secret_key, crypt_bytes); if !ok { derr<-"TOOLS/KEYSTORE/RECOVER CANT DECRYPT"; break }
-		if keystore.ID == "ECDSA" {	private_key, err := x509.ParseECPrivateKey(plain_text); if err == nil { return true, private_key }; derr<-"TOOLS/RECOVER/ECDSA: "+err.Error() }
-		if keystore.ID == "RSA" { private_key := &rsa.PrivateKey{}; if Decode_gob(derr, plain_text, private_key) { return true, private_key } }
+		if keystore.ID == "ECDSA" {	private_key, err := x509.ParseECPrivateKey(plain_text); if err == nil { return true, private_key, nil }; derr<-"TOOLS/RECOVER/ECDSA: "+err.Error() }
+		if keystore.ID == "RSA" { private_key := &rsa.PrivateKey{}; if Decode_gob(derr, plain_text, private_key) { return true, nil, private_key } }
 		derr<-string(plain_text); break
 	}
-	derr<-"TOOLS/KEYSTORE/RECOVER "+keystore.ID+" FAILED"; return false, nil
+	derr<-"TOOLS/KEYSTORE/RECOVER "+keystore.ID+" FAILED"; return false, nil, nil
 }
 
 type EasyTime struct {

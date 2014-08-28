@@ -427,7 +427,7 @@ func File_read_string(derr chan string, path string) (bool, string) {
 }
 
 func File_makepath(derr chan string, path string) bool {
-	if len(path) == 0 { derr<-"TOOLS/FILE/MAKEPATH: PATH NOT SUPPLIED"; return false }
+	if len(path) == 0 { derr<-"TOOLS/FILE/MAKEPATH PATH NOT SUPPLIED"; return false }
 	parts := strings.Split(path, "/")
 	prog := ""
 	for p := range parts {
@@ -435,6 +435,7 @@ func File_makepath(derr chan string, path string) bool {
 		prog += parts[p]+"/"
 		os.Mkdir(prog, 0700);
 	}
+	derr<-"CREATED DIRECTORIES "+path
 	return true
 }
 

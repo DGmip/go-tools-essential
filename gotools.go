@@ -128,18 +128,14 @@ func Sign_gethash(derr chan string, object interface{}) (bool, []byte) {
 }
 
 func Sign_ecdsa(derr chan string, private_key *ecdsa.PrivateKey, object interface{}) (bool, []string) {
-	ok, object_hash := Sign_gethash(derr, object)
 	for {
-		if !ok { break }
+		ok, object_hash := Sign_gethash(derr, object); if !ok { break }
+		if private_key == nil { derr<-"TOOLS/SIGN/ECDSA PRIVATE KEY IS NIL"; break }
 		a, b, err := ecdsa.Sign(rand.Reader, private_key, object_hash)
-		if err != nil {
-			derr<-err.Error()
-			break
-		}
+		if err != nil {	derr<-"TOOLS/SIGN/ECDSA: "+err.Error(); break }
 		return true, []string{a.String(), b.String()}
 	}
-	derr<-"TOOLS/SIGN/ECDSA: FAILED"
-	return false, nil
+	derr<-"TOOLS/SIGN/ECDSA FAILED"; return false, nil
 }
 
 // KEYGEN

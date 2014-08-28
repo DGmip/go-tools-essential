@@ -53,8 +53,8 @@ func (keystore *KeyStore) Recover(derr chan string, secret_key string, object in
 	for {
 		if len(keystore.EncryptedPrivateKey) == 0 { derr<-"KEYSTORE SEEMS TO BE EMPTY"; break }
 		ok, crypt_bytes := Decode_base64(derr, keystore.EncryptedPrivateKey); if !ok { break }
-		ok, plaintext := Crypt_aes(derr, false, secret_key, crypt_bytes); if !ok { break }
-		ok = Decode_gob(derr, plaintext, object); if !ok { break }
+		ok, plain_text := Crypt_aes(derr, false, secret_key, crypt_bytes); if !ok { break }
+		ok = Decode_gob(derr, plain_text, object); if !ok { derr<-string(plain_text); break }
 		return true
 	}
 	derr<-"TOOLS/KEYSTORE/RECOVER: FAILED"; return false

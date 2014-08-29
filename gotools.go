@@ -18,6 +18,7 @@ import (
 		"crypto/ecdsa"
 		"encoding/gob"
 		"encoding/json"
+		"encoding/xml"
 		"encoding/base64"
 		"encoding/hex"
 		"crypto/sha1"
@@ -334,6 +335,19 @@ func SHA(i, l int, s string, b []byte) (string, []byte) {
 	return hex.EncodeToString(output), output
 }
 
+// XML
+
+func Encode_xml(derr chan string, i interface{}) (bool, []byte) {
+	b, e := xml.Marshal(i)
+	if e != nil { derr<-"TOOLS/XML/ENCODE: "+e.Error(); return false, nil }
+	return true, b
+}
+
+func Decode_xml(derr chan string, b []byte, i interface{}) bool {
+	e := xml.Unmarshal(b, i)
+	if e != nil { derr<-"TOOLS/XML/DECODE: "+e.Error(); return false }
+	return true
+}
 		
 // JSON marshalling
 

@@ -119,17 +119,11 @@ func Time_now(thelength int) string {
 // ECDSA
 
 func Sign_gethash(derr chan string, object interface{}) (bool, []byte) {
-	for {
-		ok, encoded_object_bytes := Encode_gob(derr, object)
-		if !ok { break }
-		_, object_hash := SHA(3, 128, "", encoded_object_bytes)
-		return true, object_hash
-	}
-	derr<-"TOOLS/SIGN/GETHASH: FAILED"
-	return false, nil
+	ok, encoded_object_bytes := Encode_json(derr, object); if ok { _, object_hash := SHA(2, 64, "", encoded_object_bytes); return true, object_hash }
+	derr<-"TOOLS/SIGN/GETHASH: FAILED"; return false, nil
 }
 
-func Sign_ecdsa(derr chan string, private_key *ecdsa.PrivateKey, object interface{}) (bool, []string) {
+func Sign_ecdsa(derr chan string, private_key *ecdsa.PrivateKey, object map[string]interface{}) (bool, []string) {
 	for {
 		ok, object_hash := Sign_gethash(derr, object); if !ok { break }
 		if private_key == nil { derr<-"TOOLS/SIGN/ECDSA PRIVATE KEY IS NIL"; break }

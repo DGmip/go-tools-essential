@@ -137,7 +137,7 @@ func Sign_ecdsa(derr chan string, private_key *ecdsa.PrivateKey, object map[stri
 
 // KEYGEN
 
-func Generate_openssl(derr chan string, key_length int, secret_key string, keystore *KeyStore) bool {
+func Generate_openssl(derr chan string, key_length int, secret_key string) (bool,*KeyStore) {
 	keyfile := "temp_rsa.key"
 	derr<-"GETTING A NEW RSA KEY FROM OPENSSL"
 	for {
@@ -154,9 +154,9 @@ func Generate_openssl(derr chan string, key_length int, secret_key string, keyst
 		kkk := strings.Replace(string(publickey), "\n", "", -1)
 		kk := strings.Split(kkk, "-")
 		for k := range kk { if len(kk[k]) > 99 { new_keystore.EncodedPublicKey = kk[k] } }
-		keystore = new_keystore; return true
+		return true, new_keystore
 	}
-	derr<-"OPENSSL FAILED TO GENERATE NEW RSA KEY"; return false
+	derr<-"OPENSSL FAILED TO GENERATE NEW RSA KEY"; return false, nil
 }
 
 func Generate_ecdsa(derr chan string, secret_key string) (bool, *KeyStore) {

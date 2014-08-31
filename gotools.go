@@ -26,6 +26,7 @@ import (
 		"crypto/sha512"
 		"crypto/rand"
 		"crypto/x509"
+		"github.com/bmizerany/pat"
 		"github.com/kennygrant/sanitize"
 		"code.google.com/p/go.crypto/sha3"
 		"github.com/dchest/scrypt"
@@ -493,6 +494,18 @@ func Quit_slow(derr chan string, msg string) {
 	derr<-msg
 	time.Sleep(2 * time.Second)
 	os.Exit(1)
+}
+
+func Socket_http(derr chan string, routes []string, handler_function func(http.ResponseWriter, *http.Request)) string {
+	derr<-"TOOLS/SOCKET/HTTP STARTING NEW SERVER"
+	mux := pat.New()
+	for _, route := range routes {
+		if string(route[0]) != "/" { Quit_slow(derr, "TOOLS/SOCKET/HTTP INVALID ROUTE SUPPLIED ("+route+")") }
+		mux.Get(route, http.HandlerFunc(handler_function))
+	}
+	http_err := http.ListenAndServe(":80", mux)
+	if http_err != nil { return "TOOLS/SOCKET/HTTP: "+http_err.Error() }
+	return "TOOLS/SOCKET/HTTP UNEXPECTEDLY CLOSED"
 }
 
 func Socket_open(derr chan string, ssl bool, route string, port int, ssl_certpath, ssl_keypath string, handlerfunc func(*websocket.Conn)) {

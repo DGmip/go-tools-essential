@@ -246,6 +246,7 @@ func Decrypt_rsa(derr chan string, private_key *rsa.PrivateKey, c *CryptObject, 
 // AES CBC MODE (compatible with cryptoJS)
 
 func Crypt_aes_cbc(derr chan string, encrypt bool, password, input_text, iv []byte) (bool, []byte) {
+	derr<-"AES: USING "+string(password)
 	c, err := aes.NewCipher(password)
 	if err != nil { derr<-"TOOLS/AES/CBC "+err.Error(); return false, nil }
 	if encrypt {

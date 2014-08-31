@@ -1,6 +1,7 @@
 package tools
 
 import (
+		"fmt"
 		"os"
 		"os/exec"
 		"io/ioutil"
@@ -32,6 +33,7 @@ import (
 		"github.com/dchest/scrypt"
 		"code.google.com/p/go.net/websocket"
 		"github.com/mitchellh/mapstructure"
+		"runtime"
 		)
 
 type CryptObject struct {
@@ -598,6 +600,11 @@ func Sleep(seconds int) { for seconds > 0 { seconds--; time.Sleep(time.Second) }
 
 func Format_float(f float64, l int) string { return(strconv.FormatFloat(f, 'f', l, 64)) }
 
+func Print(s string) { fmt.Println(s) }
+func Serve(res http.ResponseWriter, s string) { fmt.Fprintf(res, "%v", s) }
+func Uppercase(s string) string { return strings.ToUpper(s) }
+func Lowercase(s string) string { return strings.ToLower(s) }
+func MaxCPU() { runtime.GOMAXPROCS(runtime.NumCPU()) }
 func Parse_sanitize(input string) string { return strings.ToLower(sanitize.HTML(input)) }
 
 func Parse_safe(derr chan string, in string) (bool, string) {

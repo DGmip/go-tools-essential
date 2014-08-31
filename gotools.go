@@ -259,7 +259,7 @@ func Crypt_aes_cbc(derr chan string, encrypt bool, password, input_text, iv []by
 	}
 	crypter := cipher.NewCBCDecrypter(c, iv)
 	crypter.CryptBlocks(input_text, input_text)
-	serialized := strings.Replace(string(input_text)[16:], "^", "", -1)
+	serialized := strings.Replace(string(input_text), "^", "", -1)
 	ok, decoded_bytes := Decode_base64(derr, serialized)
 	if !ok { derr<-"DECRYPTION FAILED : "+serialized ; return false, nil } 
 	return true, decoded_bytes

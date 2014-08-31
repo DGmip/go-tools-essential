@@ -369,7 +369,7 @@ func Encode_base64(b []byte) string { return base64.StdEncoding.EncodeToString(b
 
 func Decode_base64(derr chan string, s string) (bool, []byte) {
 	data, e := base64.StdEncoding.DecodeString(s)
-    if e != nil { derr<-"TOOLS/BASE64/DECODE: "+e.Error(); return false, nil }
+    if e != nil { derr<-"TOOLS/BASE64/DECODE: "+s+" : "e.Error(); return false, nil }
     return true, data
 }		
 

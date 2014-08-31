@@ -259,7 +259,8 @@ func Crypt_aes_cbc(derr chan string, encrypt bool, password string, input_text, 
 	}
 	crypter := cipher.NewCBCDecrypter(c, iv)
 	crypter.CryptBlocks(input_text, input_text)
-	ok, decoded_bytes := Decode_base64(derr, strings.Replace(string(input_text), "^", "", -1)); if !ok { return false, nil } 
+	ok, decoded_bytes := Decode_base64(derr, strings.Replace(string(input_text), "^", "", -1))
+	if !ok { derr<-"DECRYPTOION FAILED : "+string(input_text); return false, nil } 
 	return true, decoded_bytes
 }
 

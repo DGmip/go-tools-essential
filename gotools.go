@@ -31,6 +31,7 @@ import (
 		"code.google.com/p/go.crypto/sha3"
 		"github.com/dchest/scrypt"
 		"code.google.com/p/go.net/websocket"
+		"github.com/mitchellh/mapstructure"
 		)
 
 type CryptObject struct {
@@ -338,6 +339,12 @@ func SHA(i, l int, s string, b []byte) (string, []byte) {
 	output := hash.Sum(nil)
 	if i > 1 { if l < len(output) { output = output[0:l] } }
 	return hex.EncodeToString(output), output
+}
+
+// MAPSTRUCTURE map[string]interface{} to struct, see github.com/mitchellh/mapstructure
+
+func Decode_struct(derr chan string, src, dest interface{}) bool {
+	err := mapstructure.Decode(src, dest); if err != nil { derr<-"TOOLS/DECODE/STRUCT: "+err.Error(); return false }; return true
 }
 
 // XML

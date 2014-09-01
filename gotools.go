@@ -33,6 +33,7 @@ import (
 		"github.com/dchest/scrypt"
 		"code.google.com/p/go.net/websocket"
 		"github.com/mitchellh/mapstructure"
+		"github.com/golangdaddy/go-multi-logger"
 		"runtime"
 		)
 
@@ -599,7 +600,7 @@ func CharSet_select(set_type string) string {
 func Sleep(seconds int) { for seconds > 0 { seconds--; time.Sleep(time.Second) } } 
 
 func Format_float(f float64, l int) string { return(strconv.FormatFloat(f, 'f', l, 64)) }
-
+func Logger(devmode, ssl bool, host string, port_num int, route, appid, origin string) *mlog.MultiLogger { return mlog.Connect(devmode, ssl, host, port_num, route, appid, origin) }
 func Print(s string) { fmt.Println(s) }
 func Serve(res http.ResponseWriter, s string) { fmt.Fprintf(res, "%v", s) }
 func Uppercase(s string) string { return strings.ToUpper(s) }

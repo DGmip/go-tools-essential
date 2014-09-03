@@ -29,8 +29,7 @@ import (
 		"crypto/x509"
 		"github.com/bmizerany/pat"
 		"github.com/kennygrant/sanitize"
-		"code.google.com/p/go.crypto/sha3"
-		"github.com/dchest/scrypt"
+		"code.google.com/p/go.crypto/scrypt"
 		"code.google.com/p/go.net/websocket"
 		"github.com/mitchellh/mapstructure"
 		"github.com/golangdaddy/go-multi-logger"
@@ -335,7 +334,8 @@ func SHA(i, l int, s string, b []byte) (string, []byte) {
 	switch(i) {
 		case 1:	if l > 0 { l = 0 }
 		case 2: if l <= 64 { hash = sha256.New() } else { hash = sha512.New() }
-		case 3: if l <= 64 { hash = sha3.NewKeccak256() } else { hash = sha3.NewKeccak512() }
+		//case 3: if l <= 64 { hash = sha3.NewKeccak256() } else { hash = sha3.NewKeccak512() }
+		case 3: if l <= 64 { hash = sha256.New() } else { hash = sha512.New() }
 		default: hash = sha256.New()
 	}
 	hash.Write([]byte(s))

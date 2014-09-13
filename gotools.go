@@ -250,12 +250,11 @@ func Decrypt_rsa(derr chan string, private_key *rsa.PrivateKey, c *CryptObject, 
 // AES CBC MODE (compatible with cryptoJS)
 
 func Crypt_aes_cbc(derr chan string, encrypt bool, password, input_text, iv []byte) (bool, []byte) {
-	derr<-"AES: USING "+string(password)
 	c, err := aes.NewCipher(password)
 	if err != nil { derr<-"TOOLS/AES/CBC "+err.Error(); return false, nil }
 	if encrypt {
-		encoded := Encode_base64(input_text)
-		for ii := 0; (len(encoded) % 16) != 0; ii++ { encoded += "^" }
+		encoded := tools.Encode_base64(input_text)
+		for ii := 0; (len(encoded) % 16) != 0; ii++ { encoded = "<" + encoded }
 		buf := make([]byte, len(encoded))
 		crypter := cipher.NewCBCEncrypter(c, iv)
 		crypter.CryptBlocks(buf, []byte(encoded))
@@ -263,9 +262,8 @@ func Crypt_aes_cbc(derr chan string, encrypt bool, password, input_text, iv []by
 	}
 	crypter := cipher.NewCBCDecrypter(c, iv)
 	crypter.CryptBlocks(input_text, input_text)
-	serialized := strings.Replace(string(input_text), "^", "", -1)
-	ok, decoded_bytes := Decode_base64(derr, serialized)
-	if !ok { derr<-"DECRYPTION FAILED : "+serialized ; return false, nil } 
+	serialized := strings.Replace(string(input_text)[16:], "<", "", -1)
+	ok, decoded_bytes := tools.Decode_base64(derr, serialized); if !ok { return false, nil }
 	return true, decoded_bytes
 }
 

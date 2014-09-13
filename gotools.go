@@ -271,7 +271,7 @@ func Crypt_aes_cbc(derr chan string, encrypt bool, password, input_text, iv []by
 		
 func Crypt_aes(derr chan string, encrypt bool, password string, input_text []byte) (bool, []byte) {
 	_, password_bytes := SHA(2, 32, password, nil)
-	_, iv := SHA(3, 16, password, nil)
+	_, iv := SHA(2, 16, password, nil)
 	return Crypt_aes_cbc(derr, encrypt, password_bytes, input_text, iv)
 }
 			

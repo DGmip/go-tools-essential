@@ -60,7 +60,7 @@ func (keystore *KeyStore) Recover(derr chan string, secret_key string) (bool, *e
 		ok, crypt_bytes := Decode_base64(derr, keystore.EncryptedPrivateKey); if !ok { break }
 		ok, plain_text := Crypt_aes(derr, false, secret_key, crypt_bytes); if !ok { derr<-"TOOLS/KEYSTORE/RECOVER CANT DECRYPT"; break }
 		if keystore.ID == "ECDSA" {	private_key, err := x509.ParseECPrivateKey(plain_text); if err == nil { return true, private_key, nil }; derr<-"TOOLS/RECOVER/ECDSA: "+err.Error() }
-		if keystore.ID == "RSA" { private_key := &rsa.PrivateKey{}; if Decode_gob(derr, plain_text, private_key) { return true, nil, private_key } }
+		if keystore.ID == "RSA" { private_key, err := x509.ParsePKCS1PrivateKey(plain_text); if err == nil { return true, nil, private_key }; derr<-"TOOLS/KEYSTORE/RECOVER: "+err.Error() }
 		derr<-string(plain_text); break
 	}
 	derr<-"TOOLS/KEYSTORE/RECOVER "+keystore.ID+" FAILED"; return false, nil, nil
@@ -189,7 +189,7 @@ func keystore_privatekey(derr chan string, private_key interface{}, key_id, secr
 		keystore.ID = key_id
 		ok := false; encoded_key := []byte{}; err := errors.New("")
 		if key_id == "ECDSA" { encoded_key, err = x509.MarshalECPrivateKey(private_key.(*ecdsa.PrivateKey)); if err != nil { derr<-"X509 FAILED"; break } }
-		if key_id == "RSA" { ok, encoded_key = Encode_gob(derr, private_key); if !ok { break } }
+		if key_id == "RSA" { encoded_key = x509.MarshalPKCS1PrivateKey(private_key.(*rsa.PrivateKey)) }
 		if len(encoded_key) == 0 { break }
 		ok, ciphertext := Crypt_aes(derr, true, secret_key, encoded_key); if !ok { break }
 		keystore.EncryptedPrivateKey = Encode_base64(ciphertext)

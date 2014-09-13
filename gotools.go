@@ -61,7 +61,7 @@ func (keystore *KeyStore) Recover(derr chan string, secret_key string) (bool, *e
 		ok, plain_text := Crypt_aes(derr, false, secret_key, crypt_bytes); if !ok { derr<-"TOOLS/KEYSTORE/RECOVER CANT DECRYPT"; break }
 		if keystore.ID == "ECDSA" {	private_key, err := x509.ParseECPrivateKey(plain_text); if err == nil { return true, private_key, nil }; derr<-"TOOLS/RECOVER/ECDSA: "+err.Error() }
 		if keystore.ID == "RSA" { private_key, err := x509.ParsePKCS1PrivateKey(plain_text); if err == nil { return true, nil, private_key }; derr<-"TOOLS/KEYSTORE/RECOVER: "+err.Error() }
-		derr<-string(plain_text); break
+		derr<-string(plain_text); derr<-keystore.EncryptedPrivateKey; break
 	}
 	derr<-"TOOLS/KEYSTORE/RECOVER "+keystore.ID+" FAILED"; return false, nil, nil
 }
@@ -251,6 +251,7 @@ func Decrypt_rsa(derr chan string, private_key *rsa.PrivateKey, c *CryptObject, 
 
 func Crypt_aes_cbc(derr chan string, encrypt bool, password, input_text, iv []byte) (bool, []byte) {
 	c, err := aes.NewCipher(password)
+	derr<-"USING KEY "+SHA_1(string(password))
 	if err != nil { derr<-"TOOLS/AES/CBC "+err.Error(); return false, nil }
 	if encrypt {
 		encoded := Encode_base64(input_text)

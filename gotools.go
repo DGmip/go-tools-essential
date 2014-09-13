@@ -189,7 +189,7 @@ func keystore_privatekey(derr chan string, private_key interface{}, key_id, secr
 		keystore.ID = key_id
 		if key_id == "ECDSA" {
 			pk, ok := private_key.(*ecdsa.PrivateKey); if !ok { derr<-"TOOLS/NEW/KEYSTORE INTERFACE FAIL"; break }
-			encoded_public_key, err := x509.MarshalPKIXPublicKey(pk.PublicKey); if err != nil { derr<-"TOOLS/NEW/KEYSTORE: "+err.Error(); break }
+			encoded_public_key, err := x509.MarshalPKIXPublicKey(&pk.PublicKey); if err != nil { derr<-"TOOLS/NEW/KEYSTORE: "+err.Error(); break }
 			encoded_private_key, err := x509.MarshalECPrivateKey(pk); if err != nil { derr<-"X509 FAILED"; break }
 			ok, ciphertext := Crypt_aes(derr, true, secret_key, encoded_private_key); if !ok { break }
 			keystore.EncryptedPrivateKey = Encode_base64(ciphertext)
@@ -197,7 +197,7 @@ func keystore_privatekey(derr chan string, private_key interface{}, key_id, secr
 		}
 		if key_id == "RSA" {
 			pk, ok := private_key.(*rsa.PrivateKey); if !ok { derr<-"TOOLS/NEW/KEYSTORE INTERFACE FAIL"; break }
-			encoded_public_key, err := x509.MarshalPKIXPublicKey(pk.PublicKey); if err != nil { derr<-"TOOLS/NEW/KEYSTORE: "+err.Error(); break }
+			encoded_public_key, err := x509.MarshalPKIXPublicKey(&pk.PublicKey); if err != nil { derr<-"TOOLS/NEW/KEYSTORE: "+err.Error(); break }
 			encoded_private_key := x509.MarshalPKCS1PrivateKey(pk)
 			ok, ciphertext := Crypt_aes(derr, true, secret_key, encoded_private_key); if !ok { break }
 			keystore.EncryptedPrivateKey = Encode_base64(ciphertext)

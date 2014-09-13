@@ -6,7 +6,7 @@ import (
 		"os/exec"
 		"io/ioutil"
 		"time"
-		"errors"
+//		"errors"
 		"strings"
 		"strconv"
 		"bytes"
@@ -21,6 +21,7 @@ import (
 		"encoding/json"
 		"encoding/xml"
 		"encoding/base64"
+		"encoding/asn1"
 		"encoding/hex"
 		"crypto/sha1"
 		"crypto/sha256"
@@ -186,15 +187,23 @@ func keystore_privatekey(derr chan string, private_key interface{}, key_id, secr
 	for {
 		keystore := &KeyStore{}
 		keystore.ID = key_id
-		ok := false; encoded_key := []byte{}; err := errors.New("")
-		if key_id == "ECDSA" { encoded_key, err = x509.MarshalECPrivateKey(private_key.(*ecdsa.PrivateKey)); if err != nil { derr<-"X509 FAILED"; break } }
-		if key_id == "RSA" { encoded_key = x509.MarshalPKCS1PrivateKey(private_key.(*rsa.PrivateKey)) }
-		if len(encoded_key) == 0 { break }
-		ok, ciphertext := Crypt_aes(derr, true, secret_key, encoded_key); if !ok { break }
-		keystore.EncryptedPrivateKey = Encode_base64(ciphertext)
-		ok, encoded_public_key := Encode_gob(derr, private_key); if !ok { break }
-		keystore.EncodedPublicKey = Encode_base64(encoded_public_key)
-		keystore.PublicKeyHash = SHA_256(keystore.EncodedPublicKey)
+		if key_id == "ECDSA" {
+			pk, ok := private_key.(*ecdsa.PrivateKey); if !ok { derr<-"TOOLS/NEW/KEYSTORE INTERFACE FAIL"; break }
+			encoded_public_key, err := asn1.Marshal(pk.PublicKey); if err != nil { derr<-"TOOLS/NEW/KEYSTORE: "+err.Error(); break }
+			encoded_private_key, err := x509.MarshalECPrivateKey(pk); if err != nil { derr<-"X509 FAILED"; break }
+			ok, ciphertext := Crypt_aes(derr, true, secret_key, encoded_private_key); if !ok { break }
+			keystore.EncryptedPrivateKey = Encode_base64(ciphertext)
+			keystore.EncodedPublicKey = Encode_base64(encoded_public_key)		
+		}
+		if key_id == "RSA" {
+			pk, ok := private_key.(*rsa.PrivateKey); if !ok { derr<-"TOOLS/NEW/KEYSTORE INTERFACE FAIL"; break }
+			encoded_public_key, err := asn1.Marshal(pk.PublicKey); if err != nil { derr<-"TOOLS/NEW/KEYSTORE: "+err.Error(); break }
+			encoded_private_key := x509.MarshalPKCS1PrivateKey(private_key.(*rsa.PrivateKey))
+			ok, ciphertext := Crypt_aes(derr, true, secret_key, encoded_private_key); if !ok { break }
+			keystore.EncryptedPrivateKey = Encode_base64(ciphertext)
+			keystore.EncodedPublicKey = Encode_base64(encoded_public_key)
+		}
+		keystore.PublicKeyHash = SHA_256(keystore.EncodedPublicKey)	
 		return true, keystore
 	}
 	derr<-"FAILED TO STORE "+key_id+" KEY IN KEYSTORE"; return false, nil

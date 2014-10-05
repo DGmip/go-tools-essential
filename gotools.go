@@ -438,7 +438,7 @@ func File_write_object(derr chan string, file_path string, object interface{}) b
 }
 
 func File_read_object(derr chan string, file_path string, dest interface{}) bool {
-	file_bytes, err := ioutil.ReadFile(path); if err != nil { derr<-err.Error(); return false, nil }
+	file_bytes, err := ioutil.ReadFile(file_path); if err != nil { derr<-err.Error(); return false, nil }
 	if !Decode_gob(derr, file_bytes, dest) { return false }
 	return true
 }

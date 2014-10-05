@@ -434,7 +434,7 @@ func File_dir_list(derr chan string, path string) (bool, []string) {
 
 func File_write_json(derr chan string, file_path string, object interface{}) bool {
 	ok, object_bytes := Encode_json(derr, object); if !ok { return false }
-	return File_write_string(derr, file_path, object_bytes)
+	return File_write_bytes(derr, file_path, object_bytes)
 }
 func File_read_json(derr chan string, file_path string, dest interface{}) bool {
 	file_bytes, err := ioutil.ReadFile(file_path); if err != nil { derr<-err.Error(); return false }
@@ -444,7 +444,7 @@ func File_read_json(derr chan string, file_path string, dest interface{}) bool {
 
 func File_write_gob(derr chan string, file_path string, object interface{}) bool {
 	ok, object_bytes := Encode_gob(derr, object); if !ok { return false }
-	return File_write_string(derr, file_path, object_bytes)
+	return File_write_bytes(derr, file_path, object_bytes)
 }
 func File_read_gob(derr chan string, file_path string, dest interface{}) bool {
 	file_bytes, err := ioutil.ReadFile(file_path); if err != nil { derr<-err.Error(); return false }

@@ -434,11 +434,12 @@ func File_dir_list(derr chan string, path string) (bool, []string) {
 
 func File_write_object(derr chan string, file_path string, object interface{}) bool {
 	ok, object_bytes := Encode_gob(derr, object); if !ok { return false }
-	return File_write_bytes(derr, file_path, object_bytes)
+	return File_write_string(derr, file_path, Encode_base64(object_bytes))
 }
 
 func File_read_object(derr chan string, file_path string, dest interface{}) bool {
-	file_bytes, err := ioutil.ReadFile(file_path); if err != nil { derr<-err.Error(); return false }
+	ok, file_string := File_read_string(derr, file_path); if !ok { return false }
+	ok, file_bytes := Decode_base64(derr, strings.Replace(file_string, "\n", "", -1)); if !ok { return false }
 	if !Decode_gob(derr, file_bytes, dest) { return false }
 	return true
 }

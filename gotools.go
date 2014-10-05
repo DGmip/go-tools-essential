@@ -433,13 +433,13 @@ func File_dir_list(derr chan string, path string) (bool, []string) {
 }
 
 func File_write_object(derr chan string, file_path string, object interface{}) bool {
-	ok, object_bytes := tools.Encode_gob(derr, object); if !ok { return false }
+	ok, object_bytes := Encode_gob(derr, object); if !ok { return false }
 	return File_write_bytes(derr, file_path, object_bytes)
 }
 
 func File_read_object(derr chan string, file_path string, dest interface{}) bool {
 	file_bytes, err := ioutil.ReadFile(path); if err != nil { derr<-err.Error(); return false, nil }
-	if !tools.Decode_gob(derr, file_bytes, dest) { return false }
+	if !Decode_gob(derr, file_bytes, dest) { return false }
 	return true
 }
 

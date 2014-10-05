@@ -432,12 +432,31 @@ func File_dir_list(derr chan string, path string) (bool, []string) {
 	return true, newlist
 }
 
-func File_write_object(derr chan string, file_path string, object interface{}) bool {
+func File_write_json(derr chan string, file_path string, object interface{}) bool {
+	ok, object_bytes := Encode_json(derr, object); if !ok { return false }
+	return File_write_string(derr, file_path, object_bytes)
+}
+func File_read_json(derr chan string, file_path string, dest interface{}) bool {
+	file_bytes, err := ioutil.ReadFile(file_path); if err != nil { derr<-err.Error(); return false }
+	if !Decode_json(derr, file_bytes, dest) { return false }
+	return true
+}
+
+func File_write_gob(derr chan string, file_path string, object interface{}) bool {
+	ok, object_bytes := Encode_gob(derr, object); if !ok { return false }
+	return File_write_string(derr, file_path, object_bytes)
+}
+func File_read_gob(derr chan string, file_path string, dest interface{}) bool {
+	file_bytes, err := ioutil.ReadFile(file_path); if err != nil { derr<-err.Error(); return false }
+	if !Decode_gob(derr, file_bytes, dest) { return false }
+	return true
+}
+
+func File_write_object_base64(derr chan string, file_path string, object interface{}) bool {
 	ok, object_bytes := Encode_gob(derr, object); if !ok { return false }
 	return File_write_string(derr, file_path, Encode_base64(object_bytes))
 }
-
-func File_read_object(derr chan string, file_path string, dest interface{}) bool {
+func File_read_object_base64(derr chan string, file_path string, dest interface{}) bool {
 	ok, file_string := File_read_string(derr, file_path); if !ok { return false }
 	ok, file_bytes := Decode_base64(derr, strings.Replace(file_string, "\n", "", -1)); if !ok { return false }
 	if !Decode_gob(derr, file_bytes, dest) { return false }
@@ -449,23 +468,21 @@ func File_write_string(derr chan string, file_path, payload string) bool {
 	if err == nil { f.Write([]byte(payload)); return true }
 	derr<-"TOOLS/FILE/WRITE/STRING: "+err.Error(); return false
 }
+func File_read_string(derr chan string, path string) (bool, string) {
+	file_bytes, err := ioutil.ReadFile(path)
+	if err != nil { derr<-err.Error(); return false, "" }
+	return true, string(file_bytes)
+}
 
 func File_write_bytes(derr chan string, file_path string, payload []byte) bool {
 	f, err := os.Create(file_path); defer f.Close();
 	if err == nil { f.Write(payload); return true }
 	derr<-"TOOLS/FILE/WRITE/BYTES: "+err.Error(); return false
 }
-
 func File_read_bytes(derr chan string, path string) (bool, []byte) {
 	file_bytes, err := ioutil.ReadFile(path)
 	if err != nil { derr<-err.Error(); return false, nil }
 	return true, file_bytes
-}
-
-func File_read_string(derr chan string, path string) (bool, string) {
-	file_bytes, err := ioutil.ReadFile(path)
-	if err != nil { derr<-err.Error(); return false, "" }
-	return true, string(file_bytes)
 }
 
 func File_makepath(derr chan string, path string) bool {

@@ -123,18 +123,18 @@ func Time_now(thelength int) string {
 
 // ECDSA
 
-func Sign_gethash(derr chan string, object interface{}) (bool, []byte) {
-	ok, encoded_object_bytes := Encode_json(derr, object); if ok { _, object_hash := SHA(2, 64, "", encoded_object_bytes); return true, object_hash }
+func Sign_gethash(derr chan string, object interface{}) (bool, string) {
+	ok, encoded_object_bytes := Encode_json(derr, object); if ok { object_hash := SHA_256(string(encoded_object_bytes)); return true, object_hash }
 	derr<-"TOOLS/SIGN/GETHASH: FAILED"; return false, nil
 }
 
-func Sign_ecdsa(derr chan string, private_key *ecdsa.PrivateKey, object map[string]interface{}) (bool, []string) {
+func Sign_ecdsa(derr chan string, private_key *ecdsa.PrivateKey, object map[string]interface{}) (bool, string, []string) {
 	for {
 		ok, object_hash := Sign_gethash(derr, object); if !ok { break }
 		if private_key == nil { derr<-"TOOLS/SIGN/ECDSA PRIVATE KEY IS NIL"; break }
-		a, b, err := ecdsa.Sign(rand.Reader, private_key, object_hash)
+		a, b, err := ecdsa.Sign(rand.Reader, private_key, []byte(object_hash))
 		if err != nil {	derr<-"TOOLS/SIGN/ECDSA: "+err.Error(); break }
-		return true, []string{a.String(), b.String()}
+		return true, object_hash, []string{a.String(), b.String()}
 	}
 	derr<-"TOOLS/SIGN/ECDSA FAILED"; return false, nil
 }

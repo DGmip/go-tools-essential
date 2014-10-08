@@ -125,7 +125,7 @@ func Time_now(thelength int) string {
 
 func Sign_gethash(derr chan string, object interface{}) (bool, string) {
 	ok, encoded_object_bytes := Encode_json(derr, object); if ok { object_hash := SHA_256(string(encoded_object_bytes)); return true, object_hash }
-	derr<-"TOOLS/SIGN/GETHASH: FAILED"; return false, nil
+	derr<-"TOOLS/SIGN/GETHASH: FAILED"; return false, ""
 }
 
 func Sign_ecdsa(derr chan string, private_key *ecdsa.PrivateKey, object map[string]interface{}) (bool, string, []string) {
@@ -136,7 +136,7 @@ func Sign_ecdsa(derr chan string, private_key *ecdsa.PrivateKey, object map[stri
 		if err != nil {	derr<-"TOOLS/SIGN/ECDSA: "+err.Error(); break }
 		return true, object_hash, []string{a.String(), b.String()}
 	}
-	derr<-"TOOLS/SIGN/ECDSA FAILED"; return false, nil
+	derr<-"TOOLS/SIGN/ECDSA FAILED"; return false, "", nil
 }
 
 // KEYGEN

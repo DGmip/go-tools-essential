@@ -403,7 +403,6 @@ func Decode_hex(logs chan string, s string) (bool, []byte) {
 func Encode_gob(logs chan string, input interface{}) (bool, []byte) {
 	if input == nil { logs<-"TOOLS/GOB/ENCODE: INPUT INTERFACE IS NIL"; return false, nil }
 	encoded := new(bytes.Buffer)
-	gob.Register(map[string]interface{}{})
 	encCache := gob.NewEncoder(encoded)
 	encCache.Encode(input)
 	return true, encoded.Bytes()
@@ -411,7 +410,6 @@ func Encode_gob(logs chan string, input interface{}) (bool, []byte) {
 
 func Decode_gob(logs chan string, input []byte, data interface{}) bool {
 	dCache := bytes.NewBuffer(input)
-	gob.Register(map[string]interface{}{})
 	decCache := gob.NewDecoder(dCache)
 	e := decCache.Decode(data)
 	if e != nil || data == nil { logs<-"TOOLS/GOB/DECODE: "+e.Error(); return false }

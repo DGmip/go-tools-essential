@@ -211,20 +211,23 @@ func keystore_privatekey(logs chan string, private_key interface{}, key_id, secr
 
 // RSA encrypt / decrypt bytes
 
-func Encrypt_rsa_encoded(logs chan string, public_key_encoded string, data interface{}) (bool, *CryptObject) {
+func Encrypt_rsa_encoded(logs chan string, public_key_encoded string, data interface{}) (bool, string, string) {
 	ok, key_bytes := Decode_base64(logs, public_key_encoded)
-	if ok { new_key := &rsa.PublicKey{}; if Decode_gob(logs, key_bytes, new_key) { return Encrypt_rsa(logs, new_key, data) } }
-	return false, nil
+	if ok {
+		new_key := &rsa.PublicKey{};
+		if Decode_gob(logs, key_bytes, new_key) { return Encrypt_rsa(logs, new_key, data) }
+	}
+	return false, "", ""
 }
 
 func Encrypt_rsa(logs chan string, public_key *rsa.PublicKey, data interface{}) (bool, string, string) {
 	for {
 		aes_key := Entropy64()
 		cipher_bytes, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, public_key, []byte(aes_key), []byte("")); if err != nil { logs<-err.Error(); break }
-		protected_key = Encode_base64(cipher_bytes)
+		protected_key := Encode_base64(cipher_bytes)
 		enc_ok, encoded_object := Encode_gob(logs, data); if !enc_ok { break }
 		crypt_ok, ciphertext_bytes := Crypt_aes(logs, true, aes_key, encoded_object); if !crypt_ok { break }
-		protected_body = Encode_base64(ciphertext_bytes)
+		protected_body := Encode_base64(ciphertext_bytes)
 		return true, protected_key, protected_body
 	}
 	logs<-"TOOLS/RSA/ENCRYPT: FAILED"
@@ -241,10 +244,10 @@ func Decrypt_rsa(logs chan string, private_key *rsa.PrivateKey, protected_key, p
 		if !dec_ok { break }
 		crypt_ok, plaintext_bytes := Crypt_aes(logs, false, string(plainkey), crypt_bytes)
 		if !crypt_ok { break }
-		return true, plaintext_bytes
+		return true
 	}
 	logs<-"TOOLS/RSA/DECRYPT: FAILED"
-	return false, nil
+	return false
 }
 
 // AES CBC MODE (compatible with cryptoJS)
@@ -597,7 +600,7 @@ func Application_run(logs chan string, error_filepath string, commands []string)
 				case 5: cmd = exec.Command(commands[0], commands[1], commands[2], commands[3], commands[4])
 				default:	logs<-"TOOLS/APP/RUN WRONG NUMBER OF COMMANDS"; break
 			}
-			cmd.Stlogs = error_file
+			cmd.Stderr = error_file
 			logs<-"TOOLS/APP/RUN STARTING APPLICATION..."
 			logs<-"TOOLS/APP/RUN "+String_array_stringify(cmd.Args)
 			start_err := cmd.Start()

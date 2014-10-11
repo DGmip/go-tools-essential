@@ -432,7 +432,9 @@ func File_write_json(logs chan string, file_path string, object interface{}) boo
 }
 func File_read_json(logs chan string, file_path string, dest interface{}) bool {
 	file_bytes, err := ioutil.ReadFile(file_path); if err != nil { logs<-err.Error(); return false }
-	if !Decode_json(logs, file_bytes, dest) { return false }
+	var m map[string]interface{}
+	if !Decode_json(logs, file_bytes, m) { return false }
+	if !Decode_struct(logs, m, dest) { return false }
 	return true
 }
 

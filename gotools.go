@@ -234,7 +234,7 @@ func Encrypt_rsa(logs chan string, public_key *rsa.PublicKey, data interface{}) 
 	return false, "", ""
 }
 
-func Decrypt_rsa(logs chan string, private_key *rsa.PrivateKey, protected_key, protected_body string, dest interface{}) bool {
+func Decrypt_rsa(logs chan string, private_key *rsa.PrivateKey, protected_key, protected_body string, dest interface{}) (bool, []byte) {
 	ok, cipher_bytes := Decode_base64(logs, protected_key)
 	for {
 		if !ok { break }
@@ -244,10 +244,9 @@ func Decrypt_rsa(logs chan string, private_key *rsa.PrivateKey, protected_key, p
 		if !dec_ok { break }
 		crypt_ok, plaintext_bytes := Crypt_aes(logs, false, string(plainkey), crypt_bytes)
 		if !crypt_ok { break }
-		return true
+		return true, plaintext_bytes
 	}
-	logs<-"TOOLS/RSA/DECRYPT: FAILED"
-	return false
+	logs<-"TOOLS/RSA/DECRYPT: FAILED"; return false, nil
 }
 
 // AES CBC MODE (compatible with cryptoJS)

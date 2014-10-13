@@ -163,7 +163,7 @@ func Generate_openssl(logs chan string, key_length int, secret_key string) (bool
 	logs<-"OPENSSL FAILED TO GENERATE NEW RSA KEY"; return false, nil
 }
 
-func Generate_ecdsa(logs chan string, secret_key string) (bool, *KeyStore) {
+func Generate_ecdsa(logs chan string, secret_key string) (bool, map[string]interface{}) {
 	logs<-"TOOLS/KEYGEN/ECDSA CREATING NEW KEYSTORE"
 	for {
 		private_key, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader); if err != nil { logs<-"TOOLS/KEYGEN/ECDSA: "+err.Error(); break }
@@ -173,7 +173,7 @@ func Generate_ecdsa(logs chan string, secret_key string) (bool, *KeyStore) {
 	logs<-"TOOLS/KEYGEN/ECDSA FAILED"; return false, nil
 }
 
-func Generate_rsa(logs chan string, key_length int, secret_key string) (bool, *KeyStore) {
+func Generate_rsa(logs chan string, key_length int, secret_key string) (bool, map[string]interface{}) {
 	logs<-"TOOLS/KEYGEN/RSA: CREATING NEW KEYSTORE "+IntToString(key_length)
 	for {
 		private_key, err := rsa.GenerateKey(rand.Reader, key_length); if err != nil { logs<-"TOOLS/KEYGEN/RSA: "+err.Error(); break }
@@ -183,27 +183,26 @@ func Generate_rsa(logs chan string, key_length int, secret_key string) (bool, *K
 	logs<-"TOOLS/KEYGEN/RSA: FAILED"; return false, nil
 }
 	
-func keystore_privatekey(logs chan string, private_key interface{}, key_id, secret_key string) (bool, *KeyStore) {
+func keystore_privatekey(logs chan string, private_key interface{}, key_id, secret_key string) (bool, map[string]interface{}) {
 	for {
-		keystore := &KeyStore{}
-		keystore.ID = key_id
+		keystore := make(map[string]interface{})
 		if key_id == "ECDSA" {
 			pk, ok := private_key.(*ecdsa.PrivateKey); if !ok { logs<-"TOOLS/NEW/KEYSTORE INTERFACE FAIL"; break }
 			encoded_public_key, err := x509.MarshalPKIXPublicKey(&pk.PublicKey); if err != nil { logs<-"TOOLS/NEW/KEYSTORE: "+err.Error(); break }
 			encoded_private_key, err := x509.MarshalECPrivateKey(pk); if err != nil { logs<-"X509 FAILED"; break }
 			ok, ciphertext := Crypt_aes(logs, true, secret_key, encoded_private_key); if !ok { break }
-			keystore.EncryptedPrivateKey = Encode_base64(ciphertext)
-			keystore.EncodedPublicKey = Encode_base64(encoded_public_key)		
+			keystore["EncryptedPrivateKey"] = Encode_base64(ciphertext)
+			keystore["EncodedPublicKey"] = Encode_base64(encoded_public_key)		
 		}
 		if key_id == "RSA" {
 			pk, ok := private_key.(*rsa.PrivateKey); if !ok { logs<-"TOOLS/NEW/KEYSTORE INTERFACE FAIL"; break }
 			encoded_public_key, err := x509.MarshalPKIXPublicKey(&pk.PublicKey); if err != nil { logs<-"TOOLS/NEW/KEYSTORE: "+err.Error(); break }
 			encoded_private_key := x509.MarshalPKCS1PrivateKey(pk)
 			ok, ciphertext := Crypt_aes(logs, true, secret_key, encoded_private_key); if !ok { break }
-			keystore.EncryptedPrivateKey = Encode_base64(ciphertext)
-			keystore.EncodedPublicKey = Encode_base64(encoded_public_key)
+			keystore["EncryptedPrivateKey"] = Encode_base64(ciphertext)
+			keystore["EncodedPublicKey"] = Encode_base64(encoded_public_key)
 		}
-		keystore.PublicKeyHash = SHA_256(keystore.EncodedPublicKey)	
+		keystore["PublicKeyHash"] = SHA_256(keystore["EncodedPublicKey"].(string))	
 		return true, keystore
 	}
 	logs<-"FAILED TO STORE "+key_id+" KEY IN KEYSTORE"; return false, nil

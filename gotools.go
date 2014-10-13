@@ -45,8 +45,9 @@ type CryptObject struct {
 }
 
 func RecoverKey(logs chan string, m map[string]interface{}, secret_key string) (bool, *ecdsa.PrivateKey, *rsa.PrivateKey) {
-	for {
-		key_id, ok := m["ID"].(string); if !ok { break }
+	key_id, ok := m["ID"].(string)
+	for ok {
+		
 		encrypted_key, ok := m["EncryptedPrivateKey"].(string); if !ok { break }
 		if len(encrypted_key) == 0 { logs<-"KEYSTORE SEEMS TO BE EMPTY"; break }
 		ok, crypt_bytes := Decode_base64(logs, encrypted_key); if !ok { break }

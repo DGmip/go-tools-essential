@@ -47,7 +47,6 @@ type CryptObject struct {
 func RecoverKey(logs chan string, m map[string]interface{}, secret_key string) (bool, *ecdsa.PrivateKey, *rsa.PrivateKey) {
 	key_id, ok := m["ID"].(string)
 	for ok {
-		
 		encrypted_key, ok := m["EncryptedPrivateKey"].(string); if !ok { break }
 		if len(encrypted_key) == 0 { logs<-"KEYSTORE SEEMS TO BE EMPTY"; break }
 		ok, crypt_bytes := Decode_base64(logs, encrypted_key); if !ok { break }
@@ -72,6 +71,24 @@ func Time_easy() *EasyTime {
 	day_name := t.Weekday()
 	month_name := t.Month()
 	return &EasyTime{zone, day_name.String(), month_name.String(), t.Year(), int(t.Month()), t.Day(), t.Hour(), t.Minute(), t.Second()}	
+}
+
+func Time_map() map[string]interface{} {
+	t := time.Now()
+	zone, _ := t.Zone()
+	day_name := t.Weekday()
+	month_name := t.Month()
+	m := make(map[string]interface{})
+	m["Zone"] = zone
+	m["Day_Name"] = day_name.String()
+	m["Month_Name"] = month_name.String()
+	m["Year"] = t.Year()
+	m["Month"] = t.Month()
+	m["Day"] = t.Day()
+	m["Hour"] = t.Hour()
+	m["Minute"] = t.Minute()
+	m["Second"] = s.Second()
+	return m
 }
 
 var entropychannel chan chan string

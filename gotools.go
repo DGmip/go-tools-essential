@@ -50,10 +50,10 @@ func RecoverKey(logs chan string, m map[string]interface{}, secret_key string) (
 		if len(encrypted_key) == 0 { logs<-"KEYSTORE SEEMS TO BE EMPTY"; break }
 		ok, crypt_bytes := Decode_base64(logs, encrypted_key); if !ok { break }
 		ok, plain_text := Crypt_aes(logs, false, secret_key, crypt_bytes); if !ok { logs<-"TOOLS/KEYSTORE/RECOVER CANT DECRYPT"; break }
-		if keystore.ID == "ECDSA" {	private_key, err := x509.ParseECPrivateKey(plain_text); if err == nil { return true, private_key, nil }; logs<-"TOOLS/RECOVER/ECDSA: "+err.Error() }
-		if keystore.ID == "RSA" { private_key, err := x509.ParsePKCS1PrivateKey(plain_text); if err == nil { return true, nil, private_key }; logs<-"TOOLS/KEYSTORE/RECOVER: "+err.Error() }
+		if m["ID"] == "ECDSA" {	private_key, err := x509.ParseECPrivateKey(plain_text); if err == nil { return true, private_key, nil }; logs<-"TOOLS/RECOVER/ECDSA: "+err.Error() }
+		if m["ID"] == "RSA" { private_key, err := x509.ParsePKCS1PrivateKey(plain_text); if err == nil { return true, nil, private_key }; logs<-"TOOLS/KEYSTORE/RECOVER: "+err.Error() }
 	}
-	logs<-"TOOLS/KEYSTORE/RECOVER "+keystore.ID+" FAILED"; return false, nil, nil
+	logs<-"TOOLS/KEYSTORE/RECOVER "+m["ID"]+" FAILED"; return false, nil, nil
 }
 
 type EasyTime struct {
@@ -176,6 +176,7 @@ func Generate_rsa(logs chan string, key_length int, secret_key string) (bool, ma
 func keystore_privatekey(logs chan string, private_key interface{}, key_id, secret_key string) (bool, map[string]interface{}) {
 	for {
 		keystore := make(map[string]interface{})
+		keystore["ID"] = key_id
 		if key_id == "ECDSA" {
 			pk, ok := private_key.(*ecdsa.PrivateKey); if !ok { logs<-"TOOLS/NEW/KEYSTORE INTERFACE FAIL"; break }
 			encoded_public_key, err := x509.MarshalPKIXPublicKey(&pk.PublicKey); if err != nil { logs<-"TOOLS/NEW/KEYSTORE: "+err.Error(); break }

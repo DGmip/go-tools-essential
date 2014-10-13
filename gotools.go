@@ -83,7 +83,7 @@ func Time_map() map[string]interface{} {
 	m["Day_Name"] = day_name.String()
 	m["Month_Name"] = month_name.String()
 	m["Year"] = t.Year()
-	m["Month"] = t.Month()
+	m["Month"] = int(t.Month())
 	m["Day"] = t.Day()
 	m["Hour"] = t.Hour()
 	m["Minute"] = t.Minute()

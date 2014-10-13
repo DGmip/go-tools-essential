@@ -44,7 +44,7 @@ type CryptObject struct {
 	Time string
 }
 
-func RecoverKey(logs chan string, m, map[string]interface{}, secret_key string) (bool, *ecdsa.PrivateKey, *rsa.PrivateKey) {
+func RecoverKey(logs chan string, m map[string]interface{}, secret_key string) (bool, *ecdsa.PrivateKey, *rsa.PrivateKey) {
 	for {
 		encrypted_key, ok := m["EncryptedPrivateKey"].(string); if !ok { break }
 		if len(encrypted_key) == 0 { logs<-"KEYSTORE SEEMS TO BE EMPTY"; break }

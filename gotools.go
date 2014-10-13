@@ -44,24 +44,14 @@ type CryptObject struct {
 	Time string
 }
 
-type KeyStore struct {
-	ID string
-	PublicKeyHash string
-	EncryptedPrivateKey string
-	EncodedPublicKey string
-	decodedpublickey interface{}
-	decodedprivatekey interface{}
-}
-
-func (keystore *KeyStore) Recover(logs chan string, secret_key string) (bool, *ecdsa.PrivateKey, *rsa.PrivateKey) {
-	logs<-"TOOLS/KEYSTORE/RECOVER: USING KEY "+SHA_1(secret_key)
+func RecoverKey(logs chan string, m, map[string]interface{}, secret_key string) (bool, *ecdsa.PrivateKey, *rsa.PrivateKey) {
 	for {
-		if len(keystore.EncryptedPrivateKey) == 0 { logs<-"KEYSTORE SEEMS TO BE EMPTY"; break }
-		ok, crypt_bytes := Decode_base64(logs, keystore.EncryptedPrivateKey); if !ok { break }
+		encrypted_key, ok := m["EncryptedPrivateKey"].(string); if !ok { break }
+		if len(encrypted_key) == 0 { logs<-"KEYSTORE SEEMS TO BE EMPTY"; break }
+		ok, crypt_bytes := Decode_base64(logs, encrypted_key); if !ok { break }
 		ok, plain_text := Crypt_aes(logs, false, secret_key, crypt_bytes); if !ok { logs<-"TOOLS/KEYSTORE/RECOVER CANT DECRYPT"; break }
 		if keystore.ID == "ECDSA" {	private_key, err := x509.ParseECPrivateKey(plain_text); if err == nil { return true, private_key, nil }; logs<-"TOOLS/RECOVER/ECDSA: "+err.Error() }
 		if keystore.ID == "RSA" { private_key, err := x509.ParsePKCS1PrivateKey(plain_text); if err == nil { return true, nil, private_key }; logs<-"TOOLS/KEYSTORE/RECOVER: "+err.Error() }
-		logs<-string(plain_text); logs<-keystore.EncryptedPrivateKey; break
 	}
 	logs<-"TOOLS/KEYSTORE/RECOVER "+keystore.ID+" FAILED"; return false, nil, nil
 }

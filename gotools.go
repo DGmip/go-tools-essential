@@ -318,6 +318,11 @@ func Digest_object_json(logs chan string, object interface{}) (bool, string) {
 	return true, digest
 }
 
+func Serialize_json(logs chan string, object interface{}) (bool, string) {
+	ok, encoded := Encode_json(logs, object); if !ok { return false, "" }
+	return true, Encode_base64(encoded)
+}
+
 func Scrypt_128(logs chan string, input string) (bool, []byte) { return Scrypt(logs, input, 32) }
 func Scrypt_256(logs chan string, input string) (bool, []byte) { return Scrypt(logs, input, 64) }
 func Scrypt_512(logs chan string, input string) (bool, []byte) { return Scrypt(logs, input, 128) }

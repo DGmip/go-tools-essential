@@ -44,10 +44,10 @@ type CryptObject struct {
 	Time string
 }
 
-func RecoverKey(logs chan string, m map[string]interface{}, secret_key string) (bool, *ecdsa.PrivateKey, *rsa.PrivateKey) {
+func RecoverKey(logs chan string, m map[string]string, secret_key string) (bool, *ecdsa.PrivateKey, *rsa.PrivateKey) {
 	key_id, ok := m["ID"].(string)
 	for ok {
-		encrypted_key, ok := m["EncryptedPrivateKey"].(string); if !ok { break }
+		encrypted_key := m["EncryptedPrivateKey"]
 		if len(encrypted_key) == 0 { logs<-"KEYSTORE SEEMS TO BE EMPTY"; break }
 		ok, crypt_bytes := Decode_base64(logs, encrypted_key); if !ok { break }
 		ok, plain_text := Crypt_aes(logs, false, secret_key, crypt_bytes); if !ok { logs<-"TOOLS/KEYSTORE/RECOVER CANT DECRYPT"; break }
@@ -172,7 +172,7 @@ func Generate_openssl(logs chan string, key_length int, secret_key string) (bool
 	logs<-"OPENSSL FAILED TO GENERATE NEW RSA KEY"; return false, nil
 }
 
-func Generate_ecdsa(logs chan string, secret_key string) (bool, map[string]interface{}) {
+func Generate_ecdsa(logs chan string, secret_key string) (bool, map[string]string) {
 	logs<-"TOOLS/KEYGEN/ECDSA CREATING NEW KEYSTORE"
 	for {
 		private_key, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader); if err != nil { logs<-"TOOLS/KEYGEN/ECDSA: "+err.Error(); break }
@@ -182,7 +182,7 @@ func Generate_ecdsa(logs chan string, secret_key string) (bool, map[string]inter
 	logs<-"TOOLS/KEYGEN/ECDSA FAILED"; return false, nil
 }
 
-func Generate_rsa(logs chan string, key_length int, secret_key string) (bool, map[string]interface{}) {
+func Generate_rsa(logs chan string, key_length int, secret_key string) (bool, map[string]string) {
 	logs<-"TOOLS/KEYGEN/RSA: CREATING NEW KEYSTORE "+IntToString(key_length)
 	for {
 		private_key, err := rsa.GenerateKey(rand.Reader, key_length); if err != nil { logs<-"TOOLS/KEYGEN/RSA: "+err.Error(); break }
@@ -194,7 +194,7 @@ func Generate_rsa(logs chan string, key_length int, secret_key string) (bool, ma
 	
 func keystore_privatekey(logs chan string, private_key interface{}, key_id, secret_key string) (bool, map[string]interface{}) {
 	for {
-		keystore := make(map[string]interface{})
+		keystore := make(map[string]string)
 		keystore["ID"] = key_id
 		if key_id == "ECDSA" {
 			pk, ok := private_key.(*ecdsa.PrivateKey); if !ok { logs<-"TOOLS/NEW/KEYSTORE INTERFACE FAIL"; break }
@@ -212,7 +212,7 @@ func keystore_privatekey(logs chan string, private_key interface{}, key_id, secr
 			keystore["EncryptedPrivateKey"] = Encode_base64(ciphertext)
 			keystore["EncodedPublicKey"] = Encode_base64(encoded_public_key)
 		}
-		keystore["PublicKeyHash"] = SHA_256(keystore["EncodedPublicKey"].(string))	
+		keystore["PublicKeyHash"] = SHA_256(keystore["EncodedPublicKey"])	
 		return true, keystore
 	}
 	logs<-"FAILED TO STORE "+key_id+" KEY IN KEYSTORE"; return false, nil

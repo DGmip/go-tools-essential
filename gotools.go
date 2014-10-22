@@ -45,7 +45,7 @@ type CryptObject struct {
 }
 
 func RecoverKey(logs chan string, m map[string]string, secret_key string) (bool, *ecdsa.PrivateKey, *rsa.PrivateKey) {
-	key_id, ok := m["ID"].(string)
+	key_id, ok := m["ID"]
 	for ok {
 		encrypted_key := m["EncryptedPrivateKey"]
 		if len(encrypted_key) == 0 { logs<-"KEYSTORE SEEMS TO BE EMPTY"; break }
@@ -192,7 +192,7 @@ func Generate_rsa(logs chan string, key_length int, secret_key string) (bool, ma
 	logs<-"TOOLS/KEYGEN/RSA: FAILED"; return false, nil
 }
 	
-func keystore_privatekey(logs chan string, private_key interface{}, key_id, secret_key string) (bool, map[string]interface{}) {
+func keystore_privatekey(logs chan string, private_key interface{}, key_id, secret_key string) (bool, map[string]string) {
 	for {
 		keystore := make(map[string]string)
 		keystore["ID"] = key_id

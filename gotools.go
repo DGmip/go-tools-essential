@@ -150,7 +150,7 @@ func Sign_ecdsa(logs chan string, private_key *ecdsa.PrivateKey, object map[stri
 
 // KEYGEN
 
-func Generate_openssl(logs chan string, key_length int, secret_key string) (bool, map[string]interface{}) {
+func Generate_openssl(logs chan string, key_length int, secret_key string) (bool, map[string]string) {
 	keyfile := "temp_rsa.key"
 	logs<-"GETTING A NEW RSA KEY FROM OPENSSL"
 	for {

@@ -527,7 +527,7 @@ func URL_get_bytes(logs chan string, url string) (bool, []byte) {
 		resp, err := http.Get(url)
 		if resp != nil && resp.Body != nil { defer resp.Body.Close() }
 		if err != nil || resp == nil { logs<-"TOOLS/URL/GET: "+err.Error(); break }
-		if resp.Status != 200 { logs<-"TOOLS/URL/GET: FAILED STATUS CODE"; break }
+		if resp.StatusCode != 200 { logs<-"TOOLS/URL/GET: FAILED STATUS CODE"; break }
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil || body == nil { logs<-"TOOLS/URL/GET: "+err.Error(); break }
 		return true, body

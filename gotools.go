@@ -508,6 +508,10 @@ func File_makepath(logs chan string, path string) bool {
 }
 
 func URL_post(logs chan string, target_url string, values_map map[string]string) (bool, string) {
+	ok, b := URL_post_bytes(logs, target_url, values_map)
+	return ok, string(b)
+}
+func URL_post_bytes(logs chan string, target_url string, values_map map[string]string) (bool, []byte) {
 	client := &http.Client{}
 	values := make(url.Values)
 	for k, v := range values_map { values.Set(k, v) }
@@ -518,7 +522,7 @@ func URL_post(logs chan string, target_url string, values_map map[string]string)
 	defer response.Body.Close()
 	server_response, err := ioutil.ReadAll(response.Body)
 	if err != nil { logs<-"TOOLS/URL/POST: "+do_err.Error(); return false, "" }
-	return true, string(server_response)
+	return true, server_response
 }
 
 func URL_get(logs chan string, url string) (bool, string) { ok, b := URL_get_bytes(logs, url); if ok { return true, string(b) }; return false, "" }

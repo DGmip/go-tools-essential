@@ -518,10 +518,10 @@ func URL_post_bytes(logs chan string, target_url string, values_map map[string]s
 	request, _ := http.NewRequest("POST", target_url, strings.NewReader(values.Encode()))
 	request.Header.Set("content-type", "application/x-www-form-urlencoded")
 	response, do_err := client.Do(request)
-	if do_err != nil { logs<-"TOOLS/URL/POST: "+do_err.Error(); return false, "" }
+	if do_err != nil { logs<-"TOOLS/URL/POST: "+do_err.Error(); return false, nil }
 	defer response.Body.Close()
 	server_response, err := ioutil.ReadAll(response.Body)
-	if err != nil { logs<-"TOOLS/URL/POST: "+do_err.Error(); return false, "" }
+	if err != nil { logs<-"TOOLS/URL/POST: "+do_err.Error(); return false, nil }
 	return true, server_response
 }
 

@@ -503,7 +503,6 @@ func File_makepath(logs chan string, path string) bool {
 		prog += parts[p]+"/"
 		os.Mkdir(prog, 0700);
 	}
-	logs<-"CREATED DIRECTORIES "+path
 	return true
 }
 

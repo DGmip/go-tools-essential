@@ -605,6 +605,7 @@ func Application_run(logs chan string, error_filepath string, commands []string)
 	go func(logs chan string, bool_channel chan bool) {
 		for {
 			File_makepath(logs, "errors")
+			if !File_write_string(logs, error_filepath, "...") { break }
 			error_file, err := os.Create(error_filepath)
 			if err != nil { logs<-"TOOLS/APP/RUN: "+err.Error(); break }
 			defer error_file.Close()

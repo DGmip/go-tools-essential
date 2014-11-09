@@ -624,7 +624,7 @@ func Application_run(logs chan string, error_filepath string, commands []string)
 			if start_err != nil { logs<-"TOOLS/APP/RUN: "+start_err.Error(); break }
 			bool_channel <- true
 			logs<-"TOOLS/APP/RUN WAITING FOR APP TO FINISH..."; 
-			err = cmd.Wait(); logs<-"PROGRAM HAS FINISHED"
+			err = cmd.Wait(); logs<-"PROGRAM "+String_array_stringify(cmd.Args)+" HAS FINISHED"
 			ok, output_bytes := File_read_string(logs, error_filepath)
 			if ok { if len(output_bytes) > 0 { logs<-"TOOLS/APP/RUN(OUTPUT) "+string(output_bytes); bool_channel <- false; return }; bool_channel <- true; return }
 			logs<-"TOOLS/APP/RUN: "+err.Error(); return
